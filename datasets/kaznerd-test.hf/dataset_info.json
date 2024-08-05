@@ -1,0 +1,135 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "ner_kazakh",
+  "dataset_name": "ner-kazakh",
+  "dataset_size": 32896198,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/yeshpanovrustem/ner-kazakh@119ff5673e4cac5496ec72135471373372200df7/ner_kazakh/train-00000-of-00001.parquet": {
+      "num_bytes": 7209684,
+      "checksum": null
+    },
+    "hf://datasets/yeshpanovrustem/ner-kazakh@119ff5673e4cac5496ec72135471373372200df7/ner_kazakh/validation-00000-of-00001.parquet": {
+      "num_bytes": 903075,
+      "checksum": null
+    },
+    "hf://datasets/yeshpanovrustem/ner-kazakh@119ff5673e4cac5496ec72135471373372200df7/ner_kazakh/test-00000-of-00001.parquet": {
+      "num_bytes": 903618,
+      "checksum": null
+    }
+  },
+  "download_size": 9016377,
+  "features": {
+    "index": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "sentence_id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "tokens": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "ner_tags": {
+      "feature": {
+        "names": [
+          "O",
+          "B-ADAGE",
+          "I-ADAGE",
+          "B-ART",
+          "I-ART",
+          "B-CARDINAL",
+          "I-CARDINAL",
+          "B-CONTACT",
+          "I-CONTACT",
+          "B-DATE",
+          "I-DATE",
+          "B-DISEASE",
+          "I-DISEASE",
+          "B-EVENT",
+          "I-EVENT",
+          "B-FACILITY",
+          "I-FACILITY",
+          "B-GPE",
+          "I-GPE",
+          "B-LANGUAGE",
+          "I-LANGUAGE",
+          "B-LAW",
+          "I-LAW",
+          "B-LOCATION",
+          "I-LOCATION",
+          "B-MISCELLANEOUS",
+          "I-MISCELLANEOUS",
+          "B-MONEY",
+          "I-MONEY",
+          "B-NON_HUMAN",
+          "I-NON_HUMAN",
+          "B-NORP",
+          "I-NORP",
+          "B-ORDINAL",
+          "I-ORDINAL",
+          "B-ORGANISATION",
+          "I-ORGANISATION",
+          "B-PERSON",
+          "I-PERSON",
+          "B-PERCENTAGE",
+          "I-PERCENTAGE",
+          "B-POSITION",
+          "I-POSITION",
+          "B-PRODUCT",
+          "I-PRODUCT",
+          "B-PROJECT",
+          "I-PROJECT",
+          "B-QUANTITY",
+          "I-QUANTITY",
+          "B-TIME",
+          "I-TIME"
+        ],
+        "_type": "ClassLabel"
+      },
+      "_type": "Sequence"
+    },
+    "latinized_tokens": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 41912575,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 26344421,
+      "num_examples": 88540,
+      "dataset_name": "ner-kazakh"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 3284032,
+      "num_examples": 11067,
+      "dataset_name": "ner-kazakh"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 3267745,
+      "num_examples": 11068,
+      "dataset_name": "ner-kazakh"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

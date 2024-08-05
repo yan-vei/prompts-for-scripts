@@ -1,0 +1,103 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "kazqad",
+  "dataset_name": "kazqad",
+  "dataset_size": 10012830,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/issai/kazqad@2e43ff9596a8e075c3cd0ba3ab7584a74afca6bc/kazqad/kazqad-reading-comprehension-v1.0-kk-train.jsonl.gz": {
+      "num_bytes": 1462694,
+      "checksum": null
+    },
+    "hf://datasets/issai/kazqad@2e43ff9596a8e075c3cd0ba3ab7584a74afca6bc/kazqad/kazqad-reading-comprehension-v1.0-kk-validation.jsonl.gz": {
+      "num_bytes": 455520,
+      "checksum": null
+    },
+    "hf://datasets/issai/kazqad@2e43ff9596a8e075c3cd0ba3ab7584a74afca6bc/kazqad/kazqad-reading-comprehension-v1.0-kk-test.jsonl.gz": {
+      "num_bytes": 1620447,
+      "checksum": null
+    }
+  },
+  "download_size": 3538661,
+  "features": {
+    "id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "title": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "context": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "question": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "latinized_title": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "latinized_context": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "latinized_question": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "latinized_answers": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "answers": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "answer_start": {
+      "feature": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 13551491,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 3937061,
+      "num_examples": 3163,
+      "dataset_name": "kazqad"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 1325010,
+      "num_examples": 764,
+      "dataset_name": "kazqad"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 4750759,
+      "num_examples": 2713,
+      "dataset_name": "kazqad"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
