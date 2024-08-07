@@ -19,9 +19,10 @@ class BertNerd(torch.nn.Module):
     def forward(self, input_seq, attention_mask):
         """
         Define the model's forward pass.
+
         :param input_seq: sequence of input tokens
         :param attention_mask: attention mask
-        :return: logits
+        :return: predicted logits
         """
 
         input_seq = self.mbert(input_seq, attention_mask).last_hidden_state.to(self.device)
@@ -51,6 +52,7 @@ class BertNerd(torch.nn.Module):
     def freeze_params(self):
         """
         Only train the soft prompts, don't train any model parameters.
+
         :return: void
         """
 
