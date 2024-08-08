@@ -56,8 +56,5 @@ class BertNerd(torch.nn.Module):
         :return: void
         """
 
-        # ToDo
-        # Freeze MBert parameters, only train soft embeddings
-        # Check "mbert" params in the model and freeze them
-
-        pass
+        for param in self.bert.parameters():
+            param.requires_grad = False
