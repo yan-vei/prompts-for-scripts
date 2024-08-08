@@ -46,7 +46,7 @@ class BertNerd(torch.nn.Module):
         # ToDo
         # Logits/labels should probably be flattened, so we get the right dimension
 
-        return loss_func(logits, labels).item()
+        return loss_func(logits, labels).detach().item()
 
 
     def freeze_params(self):

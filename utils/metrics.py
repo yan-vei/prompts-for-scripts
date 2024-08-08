@@ -1,4 +1,4 @@
-def accuracy(batch, gold_batch, padding_index=-100):
+def get_accuracy(batch, gold_batch, padding_index=-100):
     """
     Computes the accuracy of the predicted batch
 
