@@ -49,3 +49,45 @@ def train_ner(model, train_dataloader, optimizer, config):
 
         # Display additional information for debugging purposes
         print(f"Epoch: {epoch}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
+
+        return model, accuracies
+
+
+def evaluate_ner(model, val_dataloader, config):
+    """
+        Define the evaluation loop for NER.
+    :param model: corresponding model class
+    :param val_dataloader: vaidation data
+    :param config: config file with hyperparameters
+    :return: validation accuracies
+    """
+
+    accuracies = []
+    correct = 0
+    total = 0
+
+    # Disable backpropagation
+    with torch.no_grad():
+
+        # Set the model in correct mode
+        model.eval()
+
+        for batch in val_dataloader:
+            inputs, attention_mask, labels = batch["input_ids"].to(config.device), batch["attention_mask"].to(config.device), batch["labels"].to(config.device)
+
+            # Make predictions and get most probable NER tags
+            logits = model(inputs, attention_mask)
+            permutated_logits = logits.permute(0, 2, 1)
+            predicted_tags = torch.max(permutated_logits, dim=1).indices
+
+            # Calculate validation accuracy
+            correct_in_batch, total_in_batch = get_accuracy(predicted_tags, labels)
+            correct += correct_in_batch
+            total += total_in_batch
+
+        acc = correct / total
+        accuracies.append(acc)
+
+        print(f"Accuracy on validation: {acc}")
+
+        return accuracies

@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer
 
 
-class NERTokenizer:
+class NERTokenizer():
     """
         Tokenizer class for the NER task in Kazakh and Turkish.
     """
