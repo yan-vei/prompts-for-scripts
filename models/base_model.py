@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModelForMaskedLM
+from transformers import BertModel
 
 class BertNerd(torch.nn.Module):
     """
@@ -7,14 +7,16 @@ class BertNerd(torch.nn.Module):
         soft prompts on Kazakh and Turkish languages.
     """
 
-    def __init__(self, config, device, freeze=True):
+    def __init__(self, config, freeze=True):
         super(BertNerd, self).__init__()
-        self.mbert = AutoModelForMaskedLM("google-bert/bert-base-multilingual-cased")
-        self.linear = torch.nn.Linear(config.hidden_size, config.num_classes)
-        self.device = device
+        self.device = config['DEVICE']
+        self.mbert = BertModel.from_pretrained("google-bert/bert-base-multilingual-uncased").to(self.device)
+        self.linear = torch.nn.Linear(config['HIDDEN_SIZE'], config['NUM_CLASSES'])
 
         if freeze:
             self.freeze_params()
+
+        print("\tModel initilized.")
 
     def forward(self, input_seq, attention_mask):
         """
@@ -24,30 +26,10 @@ class BertNerd(torch.nn.Module):
         :param attention_mask: attention mask
         :return: predicted logits
         """
-
         input_seq = self.mbert(input_seq, attention_mask).last_hidden_state.to(self.device)
         logits = self.linear(input_seq)
 
         return logits
-
-    def get_loss(self, loss_fn, logits, labels, ignore_index=None):
-        """
-        Get loss for the forward pass of the current batch.
-
-        :param loss_fn: e.g. nn.CrossEntropyLoss
-        :param logits: predicted labels
-        :param labels: actual labels from the dataset
-        :param ignore_index: padding index to ignore
-        :return: loss per batch
-        """
-
-        loss_func = loss_fn(ignore_index=ignore_index)
-
-        # ToDo
-        # Logits/labels should probably be flattened, so we get the right dimension
-
-        return loss_func(logits, labels).detach().item()
-
 
     def freeze_params(self):
         """
@@ -56,5 +38,20 @@ class BertNerd(torch.nn.Module):
         :return: void
         """
 
-        for param in self.bert.parameters():
+        for param in self.mbert.parameters():
             param.requires_grad = False
+
+    def get_params(self):
+        """
+        Return tunable parameters of the model.
+
+        :return: list of tunable params
+        """
+
+        params = []
+
+        for param in self.parameters():
+            if param.requires_grad:
+                params.append(param)
+
+        return params

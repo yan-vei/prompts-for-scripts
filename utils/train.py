@@ -1,18 +1,22 @@
 import torch
-from metrics import get_accuracy
+from .metrics import get_accuracy
 
 
-def train_ner(model, train_dataloader, optimizer, config):
+def train_ner(model, train_dataloader, loss_func, optimizer, config):
     """
         Define the training loop for NER.
     :param model: corresponding model class
-    :param train_loader: train data
+    :param train_dataloader: train data
+    :param loss_func: loss function
+    :param optimizer: optimizer
     :param config: config file with hyperparameters
     :return: model, metrics
     """
+    print("\tTraining started.")
+
     accuracies = []
 
-    for epoch in range(config.epochs):
+    for epoch in range(config['NUM_EPOCHS']):
         loss_per_epoch = 0
         correct = 0
         total = 0
@@ -21,14 +25,15 @@ def train_ner(model, train_dataloader, optimizer, config):
         model.train()
 
         for batch in train_dataloader:
-            inputs, attention_mask, labels = batch["input_ids"].to(config.device), batch["attention_mask"].to(config.device), batch["labels"].to(config.device)
+            inputs, attention_mask, labels = (batch["input_ids"].to(config['DEVICE']), batch["attention_mask"].to(config['DEVICE']),
+                                              batch["labels"].to(config['DEVICE']))
 
             # Make prediction
             logits = model(inputs, attention_mask)
 
             # Calculate loss
-            batch_loss = model.get_loss(logits, labels)
-            loss_per_epoch += batch_loss
+            batch_loss = loss_func(logits.flatten(end_dim=1), labels.flatten(end_dim=1))
+            loss_per_epoch += batch_loss.detach().item()
 
             # Get ids corresponding to the most probably NER tags
             tag_ids = torch.max(logits, dim=2).indices
