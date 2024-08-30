@@ -12,11 +12,11 @@ def train_ner(model, train_dataloader, loss_func, optimizer, config):
     :param config: config file with hyperparameters
     :return: model, metrics
     """
-    print("\tTraining started.")
-
     accuracies = []
 
     for epoch in range(config['NUM_EPOCHS']):
+        print(f'Epoch {epoch+1} training started.')
+
         loss_per_epoch = 0
         correct = 0
         total = 0
@@ -24,7 +24,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, config):
         # Set the model to train
         model.train()
 
-        for batch in train_dataloader:
+        for idx, batch in enumerate(train_dataloader):
             inputs, attention_mask, labels = (batch["input_ids"].to(config['DEVICE']), batch["attention_mask"].to(config['DEVICE']),
                                               batch["labels"].to(config['DEVICE']))
 

@@ -10,7 +10,7 @@ class SoftPrompts(nn.Module):
     def __init__(self, prompt_length, hidden_size):
         super(SoftPrompts, self).__init__()
         self.prompt_length = prompt_length
-        self.prompt_embedding = nn.Embedding(prompt_length, hidden_size)
+        self.prompt_embedding = nn.Embedding(self.prompt_length, hidden_size)
         self.init_prompt_embeddings()
 
     def init_prompt_embeddings(self):
@@ -23,7 +23,7 @@ class SoftPrompts(nn.Module):
         # Employ a different embedding instantiation strategy
         nn.init.normal_(self.prompt_embedding.weight, mean=0.0, std=0.02)
 
-    def concatenate_prompts(self, input_embeddings):
+    def forward(self, input_embeddings):
         """
             Concatenate prompt embeddings with the input embeddings.
         :param input_embeddings: embeddings of the input tokens

@@ -22,7 +22,15 @@ kaznerd_test = load_from_disk('datasets/kaznerd-test.hf')
 
 kz_labels_list = kaznerd_train.features["ner_tags"].feature.names
 config['NUM_CLASSES'] = len(kz_labels_list)
-config['DEVICE'] = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+# Enable training on cuda and mps (apple silicon)
+if torch.cuda.is_available():
+    device = 'cuda'
+elif torch.backends.mps.is_available():
+    device = 'mps'
+else:
+    device = 'cpu'
+config['DEVICE'] = device
 
 # Initialize tokenizer
 tokenizer = NERTokenizer("bert-base-uncased")
@@ -34,7 +42,7 @@ kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mas
 kz_train_dataloader = DataLoader(kz_tokenized_train, batch_size=config['BATCH_SIZE'])
 
 # Define model, loss function, optimizer
-kaznerd_model = BertNerd(config)
+kaznerd_model = BertNerd(config).to(config['DEVICE'])
 loss_func = nn.CrossEntropyLoss(ignore_index=config['PADDING_TOKEN'])
 optimizer = torch.optim.Adam(kaznerd_model.get_params(), lr=config['LEARNING_RATE'])
 

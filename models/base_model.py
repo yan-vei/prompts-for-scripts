@@ -3,8 +3,8 @@ from transformers import BertModel
 
 class BertNerd(torch.nn.Module):
     """
-        MBert-based model for performing NER tasks w/ and w/o
-        soft prompts on Kazakh and Turkish languages.
+        MBert-based model for performing NER tasks
+        on Kazakh and Turkish languages.
     """
 
     def __init__(self, config, freeze=True):
@@ -16,7 +16,7 @@ class BertNerd(torch.nn.Module):
         if freeze:
             self.freeze_params()
 
-        print("\tModel initilized.")
+        print("\tModel initialized.")
 
     def forward(self, input_seq, attention_mask):
         """
