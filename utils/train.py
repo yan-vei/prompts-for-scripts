@@ -21,7 +21,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
     accuracies = []
 
     for epoch in range(num_epochs):
-        print(f'Epoch {epoch+1} training started.')
+        print(f'Training epoch {epoch+1}/{num_epochs} started.')
 
         loss_per_epoch = 0
         correct = 0
@@ -31,6 +31,8 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
         model.train()
 
         for idx, batch in enumerate(train_dataloader):
+            print(f'Training batch {idx+1} of {len(train_dataloader)}...')
+
             inputs, attention_mask, labels = (batch["input_ids"].to(device), batch["attention_mask"].to(device),
                                               batch["labels"].to(device))
 
@@ -61,7 +63,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
         # Display additional information for debugging purposes
         print(f"\tEpoch: {epoch}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
 
-        return model, accuracies
+    return model, accuracies
 
 
 def evaluate_ner(model, val_dataloader, device):
@@ -76,7 +78,9 @@ def evaluate_ner(model, val_dataloader, device):
         # Set the model in correct mode
         model.eval()
 
-        for batch in val_dataloader:
+        for idx, batch in enumerate(val_dataloader):
+            print(f'Evaluating batch {idx+1} of {len(val_dataloader)}...')
+
             inputs, attention_mask, labels = batch["input_ids"].to(device), batch["attention_mask"].to(device), batch["labels"].to(device)
 
             # Make predictions and get most probable NER tags
@@ -94,4 +98,4 @@ def evaluate_ner(model, val_dataloader, device):
 
         print(f"\tAccuracy on validation: {acc}")
 
-        return accuracies
+    return accuracies
