@@ -35,7 +35,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
                                               batch["labels"].to(device))
 
             # Make prediction
-            logits = model(inputs, attention_mask).to(device)
+            logits = model(inputs, attention_mask)
 
             # Calculate loss
             batch_loss = loss_func(logits.flatten(end_dim=1), labels.flatten(end_dim=1))
@@ -59,7 +59,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
             optimizer.step()
 
         # Display additional information for debugging purposes
-        print(f"Epoch: {epoch}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
+        print(f"\tEpoch: {epoch}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
 
         return model, accuracies
 
@@ -92,6 +92,6 @@ def evaluate_ner(model, val_dataloader, config):
         acc = correct / total
         accuracies.append(acc)
 
-        print(f"Accuracy on validation: {acc}")
+        print(f"\tAccuracy on validation: {acc}")
 
         return accuracies
