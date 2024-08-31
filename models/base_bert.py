@@ -7,16 +7,16 @@ class BertNerd(torch.nn.Module):
         on Kazakh and Turkish languages.
     """
 
-    def __init__(self, config, freeze=True):
+    def __init__(self, name, device, hidden_size, num_classes, freeze=True):
         super(BertNerd, self).__init__()
-        self.device = config['DEVICE']
-        self.mbert = BertModel.from_pretrained("google-bert/bert-base-multilingual-uncased").to(self.device)
-        self.linear = torch.nn.Linear(config['HIDDEN_SIZE'], config['NUM_CLASSES'])
+        self.device = device
+        self.mbert = BertModel.from_pretrained(name).to(self.device)
+        self.linear = torch.nn.Linear(hidden_size, num_classes)
 
         if freeze:
             self.freeze_params()
 
-        print("\tModel initialized.")
+        print(f"\tModel {name} with hidden size {hidden_size} initialized.")
 
     def forward(self, input_seq, attention_mask):
         """

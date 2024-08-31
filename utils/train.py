@@ -17,10 +17,10 @@ def train_ner_soft_prompts(model, train_dataloader, loss_func, optimizer, device
             optimizer.zero_grad()
 
 
-def train_ner(model, train_dataloader, loss_func, optimizer, config):
+def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device):
     accuracies = []
 
-    for epoch in range(config['NUM_EPOCHS']):
+    for epoch in range(num_epochs):
         print(f'Epoch {epoch+1} training started.')
 
         loss_per_epoch = 0
@@ -31,11 +31,11 @@ def train_ner(model, train_dataloader, loss_func, optimizer, config):
         model.train()
 
         for idx, batch in enumerate(train_dataloader):
-            inputs, attention_mask, labels = (batch["input_ids"].to(config['DEVICE']), batch["attention_mask"].to(config['DEVICE']),
-                                              batch["labels"].to(config['DEVICE']))
+            inputs, attention_mask, labels = (batch["input_ids"].to(device), batch["attention_mask"].to(device),
+                                              batch["labels"].to(device))
 
             # Make prediction
-            logits = model(inputs, attention_mask)
+            logits = model(inputs, attention_mask).to(device)
 
             # Calculate loss
             batch_loss = loss_func(logits.flatten(end_dim=1), labels.flatten(end_dim=1))

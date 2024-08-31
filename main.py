@@ -6,23 +6,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
 from utils.dataloader import create_kaznerd_dataloader
 from logging_config import settings
-from utils.train import train_ner, train_ner_soft_prompts
+from utils.train import train_ner
 from models.base_bert import BertNerd
 
-
-# Define model, loss function, optimizer
-#kaznerd_model = SoftPromptedBertNerd(config).to(config['DEVICE'])
-#loss_func = nn.CrossEntropyLoss(ignore_index=config['PADDING_TOKEN'])
-#optimizer = torch.optim.Adam(list(kaznerd_model.soft_prompts.parameters()) + list(kaznerd_model.linear.parameters()), lr=config['LEARNING_RATE'])
-
-#train_ner_soft_prompts(model=kaznerd_model, optimizer=optimizer, loss_func=loss_func, train_dataloader=kz_train_dataloader,
-          #config=config)
-
-#model = AutoModelForCausalLM.from_pretrained('bert-base-multilingual-uncased')
-#model = get_peft_model(model, peft_config).to(device)
-#print(model.print_trainable_parameters())
-
-#optimizer = torch.optim.AdamW(model.parameters(), lr=config['LEARNING_RATE'])
 
 @hydra.main(config_path='configs', config_name='defaults', version_base=None)
 def run_pipeline(cfg: DictConfig):
@@ -49,28 +35,38 @@ def run_pipeline(cfg: DictConfig):
     print(f'\tConfigured loss function: {str(lossfn)} and device: {device}.')
 
     if cfg.basic.task == 'NER':
-        run_ner_pipeline(cfg, lossfn, device, cfg.basic.use_wandb)
+        run_ner_pipeline(cfg, lossfn, device)
 
     if use_wandb:
         wandb.finish()
 
 
-def run_ner_pipeline(cfg: DictConfig, lossfn, device, use_wandb=False):
+def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
-    # Instantiate MBert model
-    model = AutoModelForCausalLM.from_pretrained(cfg.model.name)
-
-    # Instantiate tokenizer
+    # Instantiate tokenizer and create dataloaders for the respective language
     tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
-
     if cfg.basic.lang == 'KZ':
         train_dataloder, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.dataset.train_path,
                                                                                   cfg.dataset.test_path,
+                                                                                  cfg.basic.padding_token,
                                                                                   cfg.dataset.batch_size)
 
     if cfg.basic.with_soft_prompts is False:
-        pass
+        # Initialize a MBert model with a linear layer on top
+        model = BertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes).to(device)
+
+        # Initialize the optimizer
+        optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
+
+        print("\t Training MBert on NER task with soft prompts.")
+
+        # Train MBert on NER task
+        train_ner(model=model, train_dataloader=train_dataloder, loss_func=lossfn,
+                  optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
+
     elif cfg.basic.with_soft_prompts is True:
+        model = AutoModelForCausalLM.from_pretrained(cfg.model.name)
+
         peft_config = PromptTuningConfig(
             task_type=TaskType.CAUSAL_LM,
             prompt_tuning_init=PromptTuningInit.TEXT,
@@ -79,6 +75,9 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device, use_wandb=False):
             tokenizer_name_or_path=cfg.tokenizer.name,
         )
         model = get_peft_model(model, peft_config).to(device)
+
+        print("\t Training MBert on NER task with soft prompts.")
+        model.print_trainable_parameters()
 
 
 if __name__ == "__main__":
