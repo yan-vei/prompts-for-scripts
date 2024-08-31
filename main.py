@@ -6,7 +6,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
 from utils.dataloader import create_kaznerd_dataloader
 from logging_config import settings
-from utils.train import train_ner
+from utils.train import train_ner, evaluate_ner
 from models.base_bert import BertNerd
 
 
@@ -58,11 +58,14 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         # Initialize the optimizer
         optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
-        print("\t Training MBert on NER task with soft prompts.")
-
+        print("\t Training MBert on NER task without soft prompts.")
         # Train MBert on NER task
         train_ner(model=model, train_dataloader=train_dataloder, loss_func=lossfn,
                   optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
+
+        # Evaluate the model
+        evaluate_ner(model=model, val_dataloader=test_dataloader, device=device)
+        print("\t Training finished. Starting evaluation of MBert on NER task.")
 
     elif cfg.basic.with_soft_prompts is True:
         model = AutoModelForCausalLM.from_pretrained(cfg.model.name)

@@ -26,6 +26,13 @@ def create_kaznerd_dataloader(tokenizer, train_path, test_path, padding_token, b
     kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
+    kz_tokenized_test = kaznerd_test.map(lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer,
+                                                                               padding_token=padding_token,
+                                                                               tags='ner_tags'), batched=True,
+                                            batch_size=batch_size)
+    kz_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+
     kz_train_dataloader = DataLoader(kz_tokenized_train, batch_size=batch_size)
-    #kz_test_dataloader = DataLoader(kz_tokenized_test, batch_size=batch_size)
-    return kz_train_dataloader, None, len(kz_labels_list)
+    kz_test_dataloader = DataLoader(kz_tokenized_test, batch_size=batch_size)
+
+    return kz_train_dataloader, kz_test_dataloader, len(kz_labels_list)

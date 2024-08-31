@@ -64,7 +64,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
         return model, accuracies
 
 
-def evaluate_ner(model, val_dataloader, config):
+def evaluate_ner(model, val_dataloader, device):
 
     accuracies = []
     correct = 0
@@ -77,7 +77,7 @@ def evaluate_ner(model, val_dataloader, config):
         model.eval()
 
         for batch in val_dataloader:
-            inputs, attention_mask, labels = batch["input_ids"].to(config.device), batch["attention_mask"].to(config.device), batch["labels"].to(config.device)
+            inputs, attention_mask, labels = batch["input_ids"].to(device), batch["attention_mask"].to(device), batch["labels"].to(device)
 
             # Make predictions and get most probable NER tags
             logits = model(inputs, attention_mask)
