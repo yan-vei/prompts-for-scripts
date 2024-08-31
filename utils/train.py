@@ -1,17 +1,23 @@
 import torch
 from .metrics import get_accuracy
 
+def train_ner_soft_prompts(model, train_dataloader, loss_func, optimizer, device, num_epochs):
+
+    for epoch in range(num_epochs):
+        model.train()
+        total_loss = 0
+        for idx, batch in enumerate(train_dataloader):
+
+            batch = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**batch)
+            loss = outputs.loss
+            total_loss += loss.detach().float()
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
 
 def train_ner(model, train_dataloader, loss_func, optimizer, config):
-    """
-        Define the training loop for NER.
-    :param model: corresponding model class
-    :param train_dataloader: train data
-    :param loss_func: loss function
-    :param optimizer: optimizer
-    :param config: config file with hyperparameters
-    :return: model, metrics
-    """
     accuracies = []
 
     for epoch in range(config['NUM_EPOCHS']):
@@ -59,13 +65,6 @@ def train_ner(model, train_dataloader, loss_func, optimizer, config):
 
 
 def evaluate_ner(model, val_dataloader, config):
-    """
-        Define the evaluation loop for NER.
-    :param model: corresponding model class
-    :param val_dataloader: vaidation data
-    :param config: config file with hyperparameters
-    :return: validation accuracies
-    """
 
     accuracies = []
     correct = 0

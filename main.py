@@ -1,50 +1,85 @@
 import torch
-import torch.nn as nn
-from datasets import load_from_disk
-from torch.utils.data import DataLoader
-from utils.tokenizer import NERTokenizer
-from utils.train import train_ner
-from models.base_model import BertNerd
+import wandb
+from omegaconf import DictConfig, OmegaConf
+import hydra
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
+from utils.dataloader import create_kaznerd_dataloader
+from logging_config import settings
+from utils.train import train_ner, train_ner_soft_prompts
+from models.base_bert import BertNerd
 
-config = {
-    'PADDING_TOKEN': -100,
-    'LEARNING_RATE': 0.001,
-    'NUM_EPOCHS': 10,
-    'BATCH_SIZE': 16,
-    'RANDOM_SEED': 42,
-    'CHUNK_SIZE': 100,
-    'HIDDEN_SIZE': 768
-}
-
-# Load datasets
-kaznerd_train = load_from_disk('datasets/kaznerd-train.hf')
-kaznerd_test = load_from_disk('datasets/kaznerd-test.hf')
-
-kz_labels_list = kaznerd_train.features["ner_tags"].feature.names
-config['NUM_CLASSES'] = len(kz_labels_list)
-
-# Enable training on cuda and mps (apple silicon)
-if torch.cuda.is_available():
-    device = 'cuda'
-elif torch.backends.mps.is_available():
-    device = 'mps'
-else:
-    device = 'cpu'
-config['DEVICE'] = device
-
-# Initialize tokenizer
-tokenizer = NERTokenizer("bert-base-uncased")
-
-# Tokenize and create dataloaders for Kazakh NER dataset
-kz_tokenized_train = kaznerd_train.map(lambda e: tokenizer.tokenize_and_align_labels(e, tags='ner_tags'), batched=True, batch_size=config['BATCH_SIZE'])
-kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-
-kz_train_dataloader = DataLoader(kz_tokenized_train, batch_size=config['BATCH_SIZE'])
 
 # Define model, loss function, optimizer
-kaznerd_model = BertNerd(config).to(config['DEVICE'])
-loss_func = nn.CrossEntropyLoss(ignore_index=config['PADDING_TOKEN'])
-optimizer = torch.optim.Adam(kaznerd_model.get_params(), lr=config['LEARNING_RATE'])
+#kaznerd_model = SoftPromptedBertNerd(config).to(config['DEVICE'])
+#loss_func = nn.CrossEntropyLoss(ignore_index=config['PADDING_TOKEN'])
+#optimizer = torch.optim.Adam(list(kaznerd_model.soft_prompts.parameters()) + list(kaznerd_model.linear.parameters()), lr=config['LEARNING_RATE'])
 
-train_ner(model=kaznerd_model, optimizer=optimizer, loss_func=loss_func, train_dataloader=kz_train_dataloader,
-          config=config)
+#train_ner_soft_prompts(model=kaznerd_model, optimizer=optimizer, loss_func=loss_func, train_dataloader=kz_train_dataloader,
+          #config=config)
+
+#model = AutoModelForCausalLM.from_pretrained('bert-base-multilingual-uncased')
+#model = get_peft_model(model, peft_config).to(device)
+#print(model.print_trainable_parameters())
+
+#optimizer = torch.optim.AdamW(model.parameters(), lr=config['LEARNING_RATE'])
+
+@hydra.main(config_path='configs', config_name='defaults', version_base=None)
+def run_pipeline(cfg: DictConfig):
+    """
+    Define the run managed by hydra configs
+    :param cfg:
+    :return: void
+    """
+
+    # Log into wandb if required
+    use_wandb = cfg.basic.use_wandb
+    if use_wandb:
+        cfg_copy = OmegaConf.to_container(cfg, resolve=True)
+        wandb.login(key=settings.WANDB_API_KEY)
+        wandb.init(project=cfg.dataset.name, name=cfg.basic.wandb_run,
+                   config=cfg_copy)
+
+    # Initialize the loss function
+    lossfn = hydra.utils.instantiate(cfg.loss)
+
+    # Initialize a device (cpu, gpu or mps (Apple Sillicon))
+    device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
+
+    print(f'\tConfigured loss function: {str(lossfn)} and device: {device}.')
+
+    if cfg.basic.task == 'NER':
+        run_ner_pipeline(cfg, lossfn, device, cfg.basic.use_wandb)
+
+    if use_wandb:
+        wandb.finish()
+
+
+def run_ner_pipeline(cfg: DictConfig, lossfn, device, use_wandb=False):
+
+    # Instantiate MBert model
+    model = AutoModelForCausalLM.from_pretrained(cfg.model.name)
+
+    # Instantiate tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
+
+    if cfg.basic.lang == 'KZ':
+        train_dataloder, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.dataset.train_path,
+                                                                                  cfg.dataset.test_path,
+                                                                                  cfg.dataset.batch_size)
+
+    if cfg.basic.with_soft_prompts is False:
+        pass
+    elif cfg.basic.with_soft_prompts is True:
+        peft_config = PromptTuningConfig(
+            task_type=TaskType.CAUSAL_LM,
+            prompt_tuning_init=PromptTuningInit.TEXT,
+            num_virtual_tokens=cfg.soft_prompts.num_virtual_tokens,
+            prompt_tuning_init_text="Classify NER tokens",
+            tokenizer_name_or_path=cfg.tokenizer.name,
+        )
+        model = get_peft_model(model, peft_config).to(device)
+
+
+if __name__ == "__main__":
+    run_pipeline()

@@ -1,0 +1,20 @@
+basic:
+  use_wandb: False
+  with_soft_prompts: False
+  wandb_run: Null
+  padding_token: -100
+  lang: KZ
+  task: NER
+defaults:
+  - _self_
+  - model: mbert
+  - tokenizer: mbert
+  - soft_prompts: defaults
+  - train: defaults
+  - dataset: kaznerd
+  - loss: ce
+hydra:
+  job:
+    chdir: False
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S.%f}

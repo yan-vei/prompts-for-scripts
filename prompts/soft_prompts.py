@@ -10,18 +10,7 @@ class SoftPrompts(nn.Module):
     def __init__(self, prompt_length, hidden_size):
         super(SoftPrompts, self).__init__()
         self.prompt_length = prompt_length
-        self.prompt_embedding = nn.Embedding(self.prompt_length, hidden_size)
-        self.init_prompt_embeddings()
-
-    def init_prompt_embeddings(self):
-        """
-            Initialize the prompt embeddings.
-        :return: void
-        """
-
-        # ToDo
-        # Employ a different embedding instantiation strategy
-        nn.init.normal_(self.prompt_embedding.weight, mean=0.0, std=0.02)
+        self.prompt_embedding = nn.Parameter(torch.randn(prompt_length, hidden_size))
 
     def forward(self, input_embeddings):
         """
@@ -30,5 +19,5 @@ class SoftPrompts(nn.Module):
         :return: concatenated embeddings matrix
         """
 
-        prompt_embeddings = self.prompt_embedding.weight.unsqueeze(0).expand(input_embeddings.size(0), -1, -1)
+        prompt_embeddings = self.prompt_embedding.unsqueeze(0).expand(input_embeddings.size(0), -1, -1)
         return torch.cat([prompt_embeddings, input_embeddings], dim=1)
