@@ -2,7 +2,7 @@ basic:
   use_wandb: False
   with_soft_prompts: False
   wandb_run: Null
-  padding_token: 100
+  padding_token: -100
   lang: KZ
   task: NER
   hidden_size: 768
