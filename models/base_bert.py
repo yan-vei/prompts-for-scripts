@@ -26,6 +26,11 @@ class BertNerd(torch.nn.Module):
         :param attention_mask: attention mask
         :return: predicted logits
         """
+        print(f"input_seq device: {input_seq.device}, attention_mask device: {attention_mask.device}")
+        print(f"input_seq shape: {input_seq.shape}, attention_mask shape: {attention_mask.shape}")
+        print(f"mbert device: {next(self.mbert.parameters()).device}")
+
+        torch.cuda.synchronize()
         output = self.mbert(input_seq, attention_mask)
         print(f"Output shape: {output.shape}")
         last_hidden_state = output.last_hidden_state
