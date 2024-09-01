@@ -1,0 +1,68 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "turkish-wiki_ner",
+  "dataset_size": 5920377,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/turkish-nlp-suite/turkish-wikiNER@30a1ef7c55cfc5130073b92f1e3d7405f7e69883/dataset/train.json": {
+      "num_bytes": 5596040,
+      "checksum": null
+    },
+    "hf://datasets/turkish-nlp-suite/turkish-wikiNER@30a1ef7c55cfc5130073b92f1e3d7405f7e69883/dataset/valid.json": {
+      "num_bytes": 307747,
+      "checksum": null
+    },
+    "hf://datasets/turkish-nlp-suite/turkish-wikiNER@30a1ef7c55cfc5130073b92f1e3d7405f7e69883/dataset/test.json": {
+      "num_bytes": 319930,
+      "checksum": null
+    }
+  },
+  "download_size": 6223717,
+  "features": {
+    "tokens": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "tags": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 12144094,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 5323055,
+      "num_examples": 17967,
+      "dataset_name": "turkish-wiki_ner"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 292565,
+      "num_examples": 1000,
+      "dataset_name": "turkish-wiki_ner"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 304757,
+      "num_examples": 1000,
+      "dataset_name": "turkish-wiki_ner"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
