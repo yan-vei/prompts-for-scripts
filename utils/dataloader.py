@@ -24,12 +24,12 @@ def create_turkish_ner_dataloader(tokenizer, train_path, test_path, padding_toke
 
     # Tokenize and create dataloaders for Turkish NER dataset
     tr_tokenized_train = turkish_ner_train.map(
-        lambda e: tokenize_and_align_labels(e, tags='tags', labels_dict=tr_labels_dict, str2int=True),
+        lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer, padding_token=padding_token, tags='tags', labels_dict=tr_labels_dict, str2int=True),
         batch_size=batch_size, batched=True)
     tr_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     tr_tokenized_test = turkish_ner_test.map(
-        lambda e: tokenize_and_align_labels(e, tags='tags', labels_dict=tr_labels_dict, str2int=True),
+        lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer, padding_token=padding_token, tags='tags', labels_dict=tr_labels_dict, str2int=True),
         batch_size=batch_size, batched=True)
     tr_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
