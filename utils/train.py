@@ -37,13 +37,16 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
                                               batch["labels"].to(device))
             # Make prediction
             logits = model(inputs, attention_mask)
+            torch.cuda.synchronize()
 
             # Calculate loss
             batch_loss = loss_func(logits.view(-1, logits.size(-1)), labels.view(-1))
+            torch.cuda.synchronize()
             loss_per_epoch += batch_loss.detach().item()
 
             # Get ids corresponding to the most probably NER tags
             tag_ids = torch.max(logits, dim=2).indices
+            torch.cuda.synchronize()
 
             # Calculate accuracy for this batch
             correct_in_batch, total_in_batch = get_accuracy(tag_ids, labels)
