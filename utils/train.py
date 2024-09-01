@@ -35,12 +35,11 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
 
             inputs, attention_mask, labels = (batch["input_ids"].to(device), batch["attention_mask"].to(device),
                                               batch["labels"].to(device))
-
             # Make prediction
             logits = model(inputs, attention_mask)
 
             # Calculate loss
-            batch_loss = loss_func(logits.flatten(end_dim=1), labels.flatten(end_dim=1))
+            batch_loss = loss_func(logits.view(-1, logits.size(-1)), labels.view(-1))
             loss_per_epoch += batch_loss.detach().item()
 
             # Get ids corresponding to the most probably NER tags
