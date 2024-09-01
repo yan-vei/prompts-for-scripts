@@ -27,6 +27,7 @@ class BertNerd(torch.nn.Module):
         :return: predicted logits
         """
         output = self.mbert(input_seq, attention_mask)
+        print(f"Output shape: {output.shape}")
         last_hidden_state = output.last_hidden_state
         print(
             f"Last hidden state device: {last_hidden_state.device}, dtype: {last_hidden_state.dtype}, min: {last_hidden_state.min().item()}, max: {last_hidden_state.max().item()}")
