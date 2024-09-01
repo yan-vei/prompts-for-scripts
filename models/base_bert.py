@@ -26,6 +26,11 @@ class BertNerd(torch.nn.Module):
         :param attention_mask: attention mask
         :return: predicted logits
         """
+        if torch.isnan(input_seq).any() or torch.isinf(input_seq).any():
+            print("NaN or Inf detected in input_seq")
+        if torch.isnan(attention_mask).any() or torch.isinf(attention_mask).any():
+            print("NaN or Inf detected in attention_mask")
+
         print(f"input_seq device: {input_seq.device}, attention_mask device: {attention_mask.device}")
         print(f"input_seq shape: {input_seq.shape}, attention_mask shape: {attention_mask.shape}")
         print(f"mbert device: {next(self.mbert.parameters()).device}")
