@@ -4,7 +4,7 @@ from omegaconf import DictConfig, OmegaConf
 import hydra
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
-from utils.dataloader import create_kaznerd_dataloader
+from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
 from logging_config import settings
 from utils.train import train_ner, evaluate_ner
 from models.base_bert import BertNerd
@@ -47,6 +47,11 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
     tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
     if cfg.basic.lang == 'KZ':
         train_dataloder, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.dataset.train_path,
+                                                                                  cfg.dataset.test_path,
+                                                                                  cfg.basic.padding_token,
+                                                                                  cfg.dataset.batch_size)
+    elif cfg.basic.lang == 'TR':
+        train_dataloder, test_dataloader, num_classes = create_turkish_ner_dataloader(tokenizer, cfg.dataset.train_path,
                                                                                   cfg.dataset.test_path,
                                                                                   cfg.basic.padding_token,
                                                                                   cfg.dataset.batch_size)

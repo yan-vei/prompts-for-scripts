@@ -1,4 +1,5 @@
 import torch
+import wandb
 from .metrics import get_accuracy
 
 def train_ner_soft_prompts(model, train_dataloader, loss_func, optimizer, device, num_epochs):
@@ -17,10 +18,14 @@ def train_ner_soft_prompts(model, train_dataloader, loss_func, optimizer, device
             optimizer.zero_grad()
 
 
-def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device):
+def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device, use_wandb=False):
     accuracies = []
 
     for epoch in range(num_epochs):
+
+        # Metrics to be logged into wandb
+        logging_dict = {}
+
         print(f'Training epoch {epoch+1}/{num_epochs} started.')
 
         loss_per_epoch = 0
@@ -63,13 +68,20 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
 
             optimizer.step()
 
+        # Log metrics into wandb
+        logging_dict["loss"] = loss_per_epoch
+        logging_dict["accuracy"] = acc
+
+        if use_wandb is True:
+            wandb.log(logging_dict)
+
         # Display additional information for debugging purposes
         print(f"\tEpoch: {epoch}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
 
     return model, accuracies
 
 
-def evaluate_ner(model, val_dataloader, device):
+def evaluate_ner(model, val_dataloader, device, use_wandb=False):
 
     accuracies = []
     correct = 0
@@ -77,8 +89,9 @@ def evaluate_ner(model, val_dataloader, device):
 
     # Disable backpropagation
     with torch.no_grad():
+        logging_dict = {}
 
-        # Set the model in correct mode
+        # Set the model into the evaluation mode
         model.eval()
 
         for idx, batch in enumerate(val_dataloader):
@@ -98,6 +111,12 @@ def evaluate_ner(model, val_dataloader, device):
 
         acc = correct / total
         accuracies.append(acc)
+
+        # Log metrics into wandb
+        logging_dict["accuracy"] = acc
+
+        if use_wandb is True:
+            wandb.log(logging_dict)
 
         print(f"\tAccuracy on validation: {acc}")
 
