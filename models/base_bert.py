@@ -10,7 +10,7 @@ class BertNerd(torch.nn.Module):
     def __init__(self, name, device, hidden_size, num_classes, freeze=True):
         super(BertNerd, self).__init__()
         self.device = device
-        self.mbert = BertModel.from_pretrained(name).to(self.device)
+        self.mbert = BertModel.from_pretrained(name)
         self.linear = torch.nn.Linear(hidden_size, num_classes)
 
         if freeze:
@@ -26,9 +26,11 @@ class BertNerd(torch.nn.Module):
         :param attention_mask: attention mask
         :return: predicted logits
         """
-        input_seq = self.mbert(input_seq, attention_mask).last_hidden_state.to(self.device)
-        logits = self.linear(input_seq)
-
+        output = self.mbert(input_seq, attention_mask)
+        last_hidden_state = output.last_hidden_state
+        print(
+            f"Last hidden state device: {last_hidden_state.device}, dtype: {last_hidden_state.dtype}, min: {last_hidden_state.min().item()}, max: {last_hidden_state.max().item()}")
+        logits = self.linear(last_hidden_state)
         return logits
 
     def freeze_params(self):
