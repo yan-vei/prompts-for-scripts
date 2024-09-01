@@ -66,10 +66,12 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         print("\t Training MBert on NER task without soft prompts.")
         # Train MBert on NER task
         train_ner(model=model, train_dataloader=train_dataloder, loss_func=lossfn,
-                  optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
+                  optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                  use_wandb=cfg.basic.use_wandb)
 
         # Evaluate the model
-        evaluate_ner(model=model, val_dataloader=test_dataloader, device=device)
+        evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
+                     use_wandb=cfg.basic.use_wandb)
         print("\t Training finished. Starting evaluation of MBert on NER task.")
 
     elif cfg.basic.with_soft_prompts is True:
