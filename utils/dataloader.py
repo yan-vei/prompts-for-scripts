@@ -39,7 +39,7 @@ def create_turkish_ner_dataloader(tokenizer, train_path, test_path, padding_toke
     return tr_train_dataloder, tr_test_dataloader, len(tr_labels_list)
 
 
-def create_kaznerd_dataloader(tokenizer, train_path, test_path, padding_token, batch_size):
+def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padding_token, batch_size):
     """
     Load and tokenize the KazNERD dataset
     :param tokenizer: tokenizer object
@@ -58,12 +58,14 @@ def create_kaznerd_dataloader(tokenizer, train_path, test_path, padding_token, b
     # Tokenize and create dataloaders for KazNERD dataset
     kz_tokenized_train = kaznerd_train.map(lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer,
                                                                                padding_token=padding_token,
+                                                                               token_type=token_type,
                                                                                tags='ner_tags'), batched=True,
                                             batch_size=batch_size)
     kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
     kz_tokenized_test = kaznerd_test.map(lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer,
+                                                                             token_type=token_type,
                                                                                padding_token=padding_token,
                                                                                tags='ner_tags'), batched=True,
                                             batch_size=batch_size)

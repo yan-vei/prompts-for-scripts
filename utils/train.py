@@ -2,20 +2,51 @@ import torch
 import wandb
 from .metrics import get_accuracy
 
-def train_ner_soft_prompts(model, train_dataloader, loss_func, optimizer, device, num_epochs):
+
+def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device,
+                                use_wandb=False):
 
     for epoch in range(num_epochs):
+        print(f'Training epoch {epoch + 1}/{num_epochs} started.')
+
+        # Metrics to be logged into wandb
+        logging_dict = {}
+
+        # Set model in the training mode
         model.train()
-        total_loss = 0
+
+        loss_per_epoch = 0
+
         for idx, batch in enumerate(train_dataloader):
+            print(f'Training batch {idx+1} of {len(train_dataloader)}...')
 
             batch = {k: v.to(device) for k, v in batch.items()}
             outputs = model(**batch)
             loss = outputs.loss
-            total_loss += loss.detach().float()
+            loss_per_epoch += loss.detach().float()
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
+
+        model.eval()
+        eval_loss = 0
+        eval_preds = []
+        for batch in test_dataloader:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            with torch.no_grad():
+                outputs = model(**batch)
+            loss = outputs.loss
+            eval_loss += loss.detach().float()
+            eval_preds.extend(
+                tokenizer.batch_decode(torch.argmax(outputs.logits, -1).detach().cpu().numpy(),
+                                       skip_special_tokens=True)
+            )
+
+        eval_epoch_loss = eval_loss / len(test_dataloader)
+        eval_ppl = torch.exp(eval_epoch_loss)
+        train_epoch_loss = loss_per_epoch / len(train_dataloader)
+        train_ppl = torch.exp(train_epoch_loss)
+        print(f"{epoch=}: {train_ppl=} {train_epoch_loss=} {eval_ppl=} {eval_epoch_loss=}")
 
 
 def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device, use_wandb=False):
@@ -76,7 +107,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device,
             wandb.log(logging_dict)
 
         # Display additional information for debugging purposes
-        print(f"\tEpoch: {epoch}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
+        print(f"\tEpoch: {epoch+1}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
 
     return model, accuracies
 

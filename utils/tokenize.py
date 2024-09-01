@@ -4,21 +4,21 @@
 # Direct link: https://github.com/IS2AI/KazNERD/blob/main/bert/run_finetune_kaznerd.py
 
 
-def tokenize_and_align_labels(examples, tags, tokenizer, padding_token=-100, labels_dict=None, str2int=False):
+def tokenize_and_align_labels(examples, tags, token_type, tokenizer, padding_token=-100, labels_dict=None, str2int=False):
     """
-      Tokenizing, padding, and aligning labels in the example sentences
+    Tokenizing function for NER task for Kazakh and Turkish
 
-      Input:
-      examples - dict, dictionaries with word tokens and assigned NER tags
-      tags - str, what is the key for tags in the examples object
-      labels_dict - None | dict, dictionary object for label conversion in case labels are strings
-      str2int - None | bool, flag to check whether label conversion is necessary
-
-      Output:
-      tokenized_inputs - dict, processed sentences with aligned labels and padded sentences
+    :param examples: a sequence of tokens
+    :param tags: tagged sequence of tokens
+    :param token_type: tokens or latinized tokens (for Kazakh)
+    :param tokenizer: tokenizer object
+    :param padding_token: padding token, default -100 in hydra config
+    :param labels_dict: dict with all the NER labels
+    :param str2int: flag to handle case with unindexed labels in the dataset (Turkish NER only)
+    :return: tokenized_inputs
     """
 
-    tokenized_inputs = tokenizer(examples['tokens'], truncation=True,
+    tokenized_inputs = tokenizer(examples[token_type], truncation=True,
                                  is_split_into_words=True, padding=True)
 
     tokenized_labels = examples[tags]

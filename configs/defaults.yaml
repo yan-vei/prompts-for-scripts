@@ -1,11 +1,12 @@
 basic:
   use_wandb: True
-  with_soft_prompts: False
+  with_soft_prompts: True
   wandb_run: Null
   padding_token: -100
-  lang: TR
-  task: KZ
+  lang: KZ
+  task: NER
   hidden_size: 768
+  token_type: latinized_tokens
 defaults:
   - _self_
   - model: mbert

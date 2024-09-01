@@ -6,7 +6,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
 from logging_config import settings
-from utils.train import train_ner, evaluate_ner
+from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts
 from models.base_bert import BertNerd
 
 
@@ -46,12 +46,14 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
     # Instantiate tokenizer and create dataloaders for the respective language
     tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
     if cfg.basic.lang == 'KZ':
-        train_dataloder, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.dataset.train_path,
+        train_dataloder, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.basic.token_type,
+                                                                                  cfg.dataset.train_path,
                                                                                   cfg.dataset.test_path,
                                                                                   cfg.basic.padding_token,
                                                                                   cfg.dataset.batch_size)
     elif cfg.basic.lang == 'TR':
-        train_dataloder, test_dataloader, num_classes = create_turkish_ner_dataloader(tokenizer, cfg.dataset.train_path,
+        train_dataloder, test_dataloader, num_classes = create_turkish_ner_dataloader(tokenizer, cfg.basic.token_type,
+                                                                                cfg.dataset.train_path,
                                                                                   cfg.dataset.test_path,
                                                                                   cfg.basic.padding_token,
                                                                                   cfg.dataset.batch_size)
@@ -63,18 +65,20 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         # Initialize the optimizer
         optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
-        print("\t Training MBert on NER task without soft prompts.")
+        print(f"\t Training MBert on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
         # Train MBert on NER task
         train_ner(model=model, train_dataloader=train_dataloder, loss_func=lossfn,
                   optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
                   use_wandb=cfg.basic.use_wandb)
 
         # Evaluate the model
+        print("\t Training finished. Starting evaluation of MBert on NER task.")
         evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
                      use_wandb=cfg.basic.use_wandb)
-        print("\t Training finished. Starting evaluation of MBert on NER task.")
 
     elif cfg.basic.with_soft_prompts is True:
+
+        # Initialize the MBert model
         model = AutoModelForCausalLM.from_pretrained(cfg.model.name)
 
         peft_config = PromptTuningConfig(
@@ -85,9 +89,17 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
             tokenizer_name_or_path=cfg.tokenizer.name,
         )
         model = get_peft_model(model, peft_config).to(device)
+        model.print_trainable_parameters()
+
+        # Initialize the optimizer
+        optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
         print("\t Training MBert on NER task with soft prompts.")
-        model.print_trainable_parameters()
+        # Train MBert on NER task
+        train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloder, test_dataloader=test_dataloader,
+                                    optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                                    use_wandb=cfg.basic.use_wandb)
+
 
 
 if __name__ == "__main__":
