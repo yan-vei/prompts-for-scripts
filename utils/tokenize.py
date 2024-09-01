@@ -3,9 +3,6 @@
 # multiple datasets' properties
 # Direct link: https://github.com/IS2AI/KazNERD/blob/main/bert/run_finetune_kaznerd.py
 
-# Padding is not essential since we are doing mini-batches of size 1, however,
-# the feature is kept for compatibility reasons
-
 
 def tokenize_and_align_labels(examples, tags, tokenizer, padding_token=-100, labels_dict=None, str2int=False):
     """
@@ -28,8 +25,7 @@ def tokenize_and_align_labels(examples, tags, tokenizer, padding_token=-100, lab
 
     # Handle the case when labels in the dataset haven't been indexed
     if str2int:
-      tokenized_labels = [[labels_dict[tag] for tag in seq] for seq in examples[tags]]
-
+        tokenized_labels = [[labels_dict[tag] for tag in seq] for seq in examples[tags]]
 
     labels = []
     for i, label in enumerate(tokenized_labels):
