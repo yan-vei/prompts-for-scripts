@@ -57,6 +57,10 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device)
             # Backpropagate
             optimizer.zero_grad()
             batch_loss.backward()
+
+            # Clip gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
             optimizer.step()
 
         # Display additional information for debugging purposes
