@@ -101,6 +101,5 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                     use_wandb=cfg.basic.use_wandb)
 
 
-
 if __name__ == "__main__":
     run_pipeline()
