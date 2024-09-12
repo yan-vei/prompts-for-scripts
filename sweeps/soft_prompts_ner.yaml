@@ -1,0 +1,16 @@
+program: main.py
+name: soft-prompts-ner
+method: grid
+parameters:
+  dataset:
+    values: [turkish-ner]
+  train.num_epochs:
+    values: [5, 10, 25, 50]
+  task:
+    values: [NER]
+  lang:
+    values: [TR]
+  soft_prompts.num_virtual_tokens:
+    values: [1, 5, 10, 20, 50]
+  optimizer.lr:
+    values: [0.01, 0.001, 0.0003, 0.00001]

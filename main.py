@@ -24,7 +24,12 @@ def run_pipeline(cfg: DictConfig):
     if use_wandb:
         cfg_copy = OmegaConf.to_container(cfg, resolve=True)
         wandb.login(key=settings.WANDB_API_KEY)
-        wandb.init(project=cfg.dataset.name, name=cfg.basic.wandb_run,
+
+        # Uncomment for sweeps
+        project_name = str(cfg.dataset.name) + "_" + str(cfg.lang) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
+        #project_name = cfg.dataset.name
+
+        wandb.init(project=project_name, name=cfg.basic.wandb_run,
                    config=cfg_copy)
 
     # Initialize the loss function
