@@ -1,20 +1,16 @@
 import torch
 from transformers import BertModel
-from peft import PeftModel, PeftConfig
 
-
-class BertNerd(torch.nn.Module):
+class PromptedBertNerd(torch.nn.Module):
     """
         MBert-based model for performing NER tasks
-        on Kazakh and Turkish languages.
+        on Kazakh based on soft prompts from Turkish NER.
     """
 
-    def __init__(self, name, device, hidden_size, num_classes, soft_prompts_path, freeze=True):
-        super(BertNerd, self).__init__()
+    def __init__(self, name, device, hidden_size, num_classes, freeze=True):
+        super(PromptedBertNerd, self).__init__()
         self.device = device
         self.mbert = BertModel.from_pretrained(name)
-        self.mbert = PeftModel.from_pretrained(self.mbert, soft_prompts_path)
-
         self.linear = torch.nn.Linear(hidden_size, num_classes)
 
         if freeze:
