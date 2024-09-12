@@ -12,5 +12,3 @@ parameters:
     values: [TR]
   soft_prompts.num_virtual_tokens:
     values: [1, 5, 10, 20, 50]
-  optimizer.lr:
-    values: [0.01, 0.001, 0.0003, 0.00001]

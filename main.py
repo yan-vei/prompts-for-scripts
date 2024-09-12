@@ -119,7 +119,9 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                         optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
 
             print("\t Soft prompts trained. Saving model...")
-            model.save_pretrained("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens))
+            model.save_pretrained("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
+                cfg.train.num_epochs
+            ))
 
 
 if __name__ == "__main__":
