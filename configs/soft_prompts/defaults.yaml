@@ -1,2 +1,2 @@
 num_virtual_tokens: 20
-evaluate: False
+evaluate: True
