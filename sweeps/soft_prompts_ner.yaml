@@ -6,9 +6,11 @@ parameters:
     values: [turkish-ner]
   train.num_epochs:
     values: [5, 10, 25, 50]
-  task:
+  basic.task:
     values: [NER]
-  lang:
+  basic.lang:
     values: [TR]
+  basic.with_soft_prompts:
+    values: [True]
   soft_prompts.num_virtual_tokens:
     values: [1, 5, 10, 20, 50]
