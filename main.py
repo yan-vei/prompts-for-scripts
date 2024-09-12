@@ -97,8 +97,10 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         print("\t Training MBert on NER task with soft prompts.")
         # Train MBert on NER task
         train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloder, test_dataloader=test_dataloader,
-                                    optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
-                                    use_wandb=cfg.basic.use_wandb)
+                                    optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
+
+        print("\t Soft prompts trained. Saving model...")
+        model.save_pretrained("soft_prompts/ner")
 
 
 if __name__ == "__main__":

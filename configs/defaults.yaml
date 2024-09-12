@@ -1,12 +1,12 @@
 basic:
   use_wandb: False
-  with_soft_prompts: False
+  with_soft_prompts: True
   wandb_run: Null
   padding_token: -100
-  lang: KZ
+  lang: TR
   task: NER
   hidden_size: 768
-  token_type: latinized_tokens
+  token_type: tokens
 defaults:
   - _self_
   - model: mbert
@@ -14,7 +14,7 @@ defaults:
   - soft_prompts: defaults
   - train: defaults
   - optimizer: adamw
-  - dataset: kaznerd
+  - dataset: turkish-ner
   - loss: ce
 hydra:
   job:

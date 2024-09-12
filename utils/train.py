@@ -3,14 +3,20 @@ import wandb
 from .metrics import get_accuracy
 
 
-def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device,
-                                use_wandb=False):
-
+def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device):
+    """
+    Train soft prompts on Turkish for NER.
+    :param model: mBERT
+    :param tokenizer: mBERT tokenizer
+    :param train_dataloader: train data
+    :param test_dataloader: test data
+    :param optimizer: e.g. AdamW
+    :param num_epochs: int, specified in hydra config
+    :param device: CPU/GPU/MPS
+    :return: void
+    """
     for epoch in range(num_epochs):
         print(f'Training epoch {epoch + 1}/{num_epochs} started.')
-
-        # Metrics to be logged into wandb
-        logging_dict = {}
 
         # Set model in the training mode
         model.train()
@@ -50,6 +56,17 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
 
 
 def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device, use_wandb=False):
+    """
+    Baseline training for NER task.
+    :param model: mBERT
+    :param train_dataloader: train data
+    :param loss_func: e.g. CrossEntropyLoss
+    :param optimizer: e.g. AdamW
+    :param num_epochs: int, specified in hydra config
+    :param device: CPU/GPU/MPS
+    :param use_wandb: bool, needed for logging
+    :return: void
+    """
     accuracies = []
 
     for epoch in range(num_epochs):
@@ -113,6 +130,14 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device,
 
 
 def evaluate_ner(model, val_dataloader, device, use_wandb=False):
+    """
+    Baseline evaluation on NER task.
+    :param model: mBERT
+    :param val_dataloader: evaluation data
+    :param device: CPU/GPU/MPS
+    :param use_wandb: bool, needed for logging
+    :return: void
+    """
 
     accuracies = []
     correct = 0
