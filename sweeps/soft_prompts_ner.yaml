@@ -14,6 +14,8 @@ parameters:
     values: [True]
   soft_prompts.num_virtual_tokens:
     values: [1, 5, 10, 20, 50]
+  soft_prompts.evaluate:
+    values: [False]
 command:
   - ${env}
   - python
