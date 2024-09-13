@@ -15,6 +15,7 @@ defaults:
   - train: defaults
   - optimizer: adamw
   - dataset: kaznerd
+  - scheduler: defaults
   - loss: ce
 hydra:
   job:

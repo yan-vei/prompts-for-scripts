@@ -73,7 +73,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
         # Intialize the linear scheduler for LR warmup
         scheduler = get_linear_schedule_with_warmup(optimizer,
-                                                    num_warmup_steps=cfg.optimizer.warmup_steps,
+                                                    num_warmup_steps=cfg.scheduler.warmup_steps,
                                                     num_training_steps=len(train_dataloder)*cfg.train.num_epochs)
 
         print(f"\t Training MBert on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
