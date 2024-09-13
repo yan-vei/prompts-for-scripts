@@ -39,7 +39,7 @@ def create_turkish_ner_dataloader(tokenizer, token_type, train_path, test_path, 
     return tr_train_dataloder, tr_test_dataloader, len(tr_labels_list)
 
 
-def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padding_token, batch_size):
+def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padding_token, batch_size, is_subset=True):
     """
     Load and tokenize the KazNERD dataset
     :param tokenizer: tokenizer object
@@ -54,6 +54,12 @@ def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padd
 
     # List of labels is necessary to fix the amount of classes
     kz_labels_list = kaznerd_train.features["ner_tags"].feature.names
+
+    # Select a random subset of KAZnerd to compare to Turkish wiki NER
+    # There are roughly 18k training examples and 1k validation and test examples in Turkish NER
+    if is_subset is True:
+        kaznerd_train = kaznerd_train.shuffle(seed=42).select(range(18000))
+        kaznerd_test = kaznerd_test.shuffle(seed=42).select(range(1000))
 
     # Tokenize and create dataloaders for KazNERD dataset
     kz_tokenized_train = kaznerd_train.map(lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer,

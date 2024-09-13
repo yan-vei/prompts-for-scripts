@@ -52,13 +52,13 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
     # Instantiate tokenizer and create dataloaders for the respective language
     tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
     if cfg.basic.lang == 'KZ':
-        train_dataloder, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.basic.token_type,
+        train_dataloader, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.basic.token_type,
                                                                                   cfg.dataset.train_path,
                                                                                   cfg.dataset.test_path,
                                                                                   cfg.basic.padding_token,
                                                                                   cfg.dataset.batch_size)
     elif cfg.basic.lang == 'TR':
-        train_dataloder, test_dataloader, num_classes = create_turkish_ner_dataloader(tokenizer, cfg.basic.token_type,
+        train_dataloader, test_dataloader, num_classes = create_turkish_ner_dataloader(tokenizer, cfg.basic.token_type,
                                                                                 cfg.dataset.train_path,
                                                                                   cfg.dataset.test_path,
                                                                                   cfg.basic.padding_token,
@@ -74,11 +74,11 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         # Intialize the linear scheduler for LR warmup
         scheduler = get_linear_schedule_with_warmup(optimizer,
                                                     num_warmup_steps=cfg.scheduler.warmup_steps,
-                                                    num_training_steps=len(train_dataloder)*cfg.train.num_epochs)
+                                                    num_training_steps=len(train_dataloader)*cfg.train.num_epochs)
 
         print(f"\t Training MBert on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
         # Train MBert on NER task
-        train_ner(model=model, train_dataloader=train_dataloder, loss_func=lossfn,
+        train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
                   optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
                   use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
 
@@ -120,7 +120,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             print("\t Training MBert on NER task with soft prompts.")
             # Train MBert on NER task
-            train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloder, test_dataloader=test_dataloader,
+            train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader, test_dataloader=test_dataloader,
                                         optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
 
             print("\t Soft prompts trained. Saving model...")
