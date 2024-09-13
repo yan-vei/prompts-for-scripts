@@ -1,4 +1,4 @@
 name: kaznerd
 train_path: datasets/kaznerd-train.hf
 test_path: datasets/kaznerd-test.hf
-batch_size: 16
+batch_size: 128

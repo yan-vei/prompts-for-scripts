@@ -3,7 +3,7 @@ basic:
   with_soft_prompts: True
   wandb_run: Null
   padding_token: -100
-  lang: TR
+  lang: KZ
   task: NER
   hidden_size: 768
   token_type: tokens
@@ -14,7 +14,7 @@ defaults:
   - soft_prompts: defaults
   - train: defaults
   - optimizer: adamw
-  - dataset: turkish-ner
+  - dataset: kaznerd
   - loss: ce
 hydra:
   job:

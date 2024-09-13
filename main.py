@@ -2,7 +2,7 @@ import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
 import hydra
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, get_linear_schedule_with_warmup
 from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
 from logging_config import settings
@@ -26,8 +26,8 @@ def run_pipeline(cfg: DictConfig):
         wandb.login(key=settings.WANDB_API_KEY)
 
         # Uncomment for sweeps
-        project_name = str(cfg.dataset.name) + "_" + str(cfg.basic.lang) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
-        #project_name = cfg.dataset.name
+        #project_name = str(cfg.dataset.name) + "_" + str(cfg.basic.lang) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
+        project_name = cfg.dataset.name
 
         wandb.init(project=project_name, name=cfg.basic.wandb_run,
                    config=cfg_copy)
