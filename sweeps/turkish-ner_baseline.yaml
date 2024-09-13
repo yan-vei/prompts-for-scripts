@@ -11,11 +11,13 @@ parameters:
   basic.lang:
     values: [TR]
   basic.with_soft_prompts:
-    values: [True]
-  soft_prompts.num_virtual_tokens:
-    values: [1, 5, 10, 20, 50]
-  soft_prompts.evaluate:
     values: [False]
+  dataset.batch_size:
+    values: [16, 32, 64]
+  optimizer.lr:
+    values: [0.00005, 0.00001, 0.0001, 0.000001]
+  optimizer.weight_decay:
+    values: [0.0001, 0.001]
 command:
   - ${env}
   - python
