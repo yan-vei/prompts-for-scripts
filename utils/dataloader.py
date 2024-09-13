@@ -1,6 +1,6 @@
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
-from .tokenize import tokenize_and_align_labels
+from .tokenize import tokenize_and_align_labels_ner
 
 
 def create_turkish_ner_dataloader(tokenizer, token_type, train_path, test_path, padding_token, batch_size):
@@ -24,12 +24,14 @@ def create_turkish_ner_dataloader(tokenizer, token_type, train_path, test_path, 
 
     # Tokenize and create dataloaders for Turkish NER dataset
     tr_tokenized_train = turkish_ner_train.map(
-        lambda e: tokenize_and_align_labels(e, token_type=token_type, tokenizer=tokenizer, padding_token=padding_token, tags='tags', labels_dict=tr_labels_dict, str2int=True),
+        lambda e: tokenize_and_align_labels_ner(e, tags='tags', token_type=token_type, tokenizer=tokenizer,
+                                                padding_token=padding_token, labels_dict=tr_labels_dict, str2int=True),
         batch_size=batch_size, batched=True)
     tr_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     tr_tokenized_test = turkish_ner_test.map(
-        lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer, token_type=token_type, padding_token=padding_token, tags='tags', labels_dict=tr_labels_dict, str2int=True),
+        lambda e: tokenize_and_align_labels_ner(e, tags='tags', token_type=token_type, tokenizer=tokenizer,
+                                                padding_token=padding_token, labels_dict=tr_labels_dict, str2int=True),
         batch_size=batch_size, batched=True)
     tr_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
@@ -62,19 +64,19 @@ def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padd
         kaznerd_test = kaznerd_test.shuffle(seed=42).select(range(1000))
 
     # Tokenize and create dataloaders for KazNERD dataset
-    kz_tokenized_train = kaznerd_train.map(lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer,
-                                                                               padding_token=padding_token,
-                                                                               token_type=token_type,
-                                                                               tags='ner_tags'), batched=True,
-                                            batch_size=batch_size)
+    kz_tokenized_train = kaznerd_train.map(lambda e: tokenize_and_align_labels_ner(e, tags='ner_tags',
+                                                                                   token_type=token_type,
+                                                                                   tokenizer=tokenizer,
+                                                                                   padding_token=padding_token), batched=True,
+                                           batch_size=batch_size)
     kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
 
-    kz_tokenized_test = kaznerd_test.map(lambda e: tokenize_and_align_labels(e, tokenizer=tokenizer,
-                                                                             token_type=token_type,
-                                                                               padding_token=padding_token,
-                                                                               tags='ner_tags'), batched=True,
-                                            batch_size=batch_size)
+    kz_tokenized_test = kaznerd_test.map(lambda e: tokenize_and_align_labels_ner(e, tags='ner_tags',
+                                                                                 token_type=token_type,
+                                                                                 tokenizer=tokenizer,
+                                                                                 padding_token=padding_token), batched=True,
+                                         batch_size=batch_size)
     kz_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     kz_train_dataloader = DataLoader(kz_tokenized_train, batch_size=batch_size)
