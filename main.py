@@ -71,11 +71,16 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         # Initialize the optimizer
         optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
+        # Intialize the linear scheduler for LR warmup
+        scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                    num_warmup_steps=cfg.optimizer.warmup_steps,
+                                                    num_training_steps=len(train_dataloder)*cfg.train.num_epochs)
+
         print(f"\t Training MBert on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
         # Train MBert on NER task
         train_ner(model=model, train_dataloader=train_dataloder, loss_func=lossfn,
                   optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
-                  use_wandb=cfg.basic.use_wandb)
+                  use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
 
         # Evaluate the model
         print("\t Training finished. Starting evaluation of MBert on NER task.")

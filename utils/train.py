@@ -55,13 +55,14 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
         print(f"{epoch=}: {train_ppl=} {train_epoch_loss=} {eval_ppl=} {eval_epoch_loss=}")
 
 
-def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device, use_wandb=False):
+def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epochs, device, use_wandb=False):
     """
     Baseline training for NER task.
     :param model: mBERT
     :param train_dataloader: train data
     :param loss_func: e.g. CrossEntropyLoss
     :param optimizer: e.g. AdamW
+    :param scheduler: use for warmup
     :param num_epochs: int, specified in hydra config
     :param device: CPU/GPU/MPS
     :param use_wandb: bool, needed for logging
@@ -115,6 +116,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, num_epochs, device,
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
             optimizer.step()
+            scheduler.step()
 
         # Log metrics into wandb
         logging_dict["loss"] = loss_per_epoch
