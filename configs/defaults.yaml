@@ -1,6 +1,6 @@
 basic:
   use_wandb: True
-  with_soft_prompts: True
+  with_soft_prompts: False
   wandb_run: Null
   padding_token: -100
   lang: KZ
