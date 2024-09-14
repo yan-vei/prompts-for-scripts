@@ -26,8 +26,8 @@ def run_pipeline(cfg: DictConfig):
         wandb.login(key=settings.WANDB_API_KEY)
 
         # Uncomment for sweeps
-        project_name = str(cfg.dataset.name) + "_" + str(cfg.soft_prompts.init_strategy) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
-        #project_name = cfg.dataset.name
+        #project_name = str(cfg.dataset.name) + "_" + str(cfg.soft_prompts.init_strategy) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
+        project_name = cfg.dataset.name + "_sweep"
 
         wandb.init(project=project_name, name=cfg.basic.wandb_run,
                    config=cfg_copy)
