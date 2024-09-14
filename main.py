@@ -108,14 +108,16 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             # Initialize prompts according to the declared strategy
             if cfg.soft_prompts.init_strategy == 'random':
-                peft_config = initialize_randomly(cfg.soft_prompts.num_virtual_tokens)
+                model = initialize_randomly(cfg.soft_prompts.num_virtual_tokens,
+                                            cfg.basic.task, model)
             elif cfg.soft_prompts.init_strategy == 'task':
-                peft_config = initialize_with_task(cfg.soft_prompts.num_virtual_tokens,
-                                                   cfg.basic.task, model, tokenizer)
+                model = initialize_with_task(cfg.soft_prompts.num_virtual_tokens,
+                                             cfg.basic.task, model, cfg.tokenizer.name)
             elif cfg.soft_prompts.init_strategy == 'normal':
-                peft_config = initialize_normal(cfg.soft_prompts.num_virtual_tokens, cfg.basic.hidden_size)
+                model = initialize_normal(cfg.soft_prompts.num_virtual_tokens, cfg.basic.hidden_size,
+                                          cfg.basic.task, model)
 
-            model = get_peft_model(model, peft_config).to(device)
+            model.to(device)
             model.print_trainable_parameters()
 
             # Initialize the optimizer
@@ -124,7 +126,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
             print("\t Training mBERT on NER task with soft prompts.")
             # Train mBERT on NER task
             train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader, test_dataloader=test_dataloader,
-                                        optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
+                                        optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
             print("\t Soft prompts trained. Saving model...")
             model.save_pretrained("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(

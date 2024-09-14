@@ -3,7 +3,7 @@ import wandb
 from .metrics import get_accuracy
 
 
-def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device):
+def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):
     """
     Train soft prompts on Turkish for NER.
     :param model: mBERT
@@ -27,6 +27,12 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
             print(f'Training batch {idx+1} of {len(train_dataloader)}...')
 
             batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Pad labels
+            labels = batch['labels']
+            padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
+            batch['labels'] = padded_labels
+
             outputs = model(**batch)
             loss = outputs.loss
             loss_per_epoch += loss.detach().float()
@@ -39,6 +45,12 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
         eval_preds = []
         for batch in test_dataloader:
             batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Pad labels again:
+            labels = batch['labels']
+            padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
+            batch['labels'] = padded_labels
+
             with torch.no_grad():
                 outputs = model(**batch)
             loss = outputs.loss
