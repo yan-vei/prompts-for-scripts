@@ -130,7 +130,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             print("\t Soft prompts trained. Saving model...")
             model.save_pretrained("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
-                cfg.train.num_epochs
+                cfg.soft_prompts.init_strategy + "/" + str(cfg.train.num_epochs)
             ))
 
 
