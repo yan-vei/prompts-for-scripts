@@ -2,11 +2,12 @@ import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
 import hydra
-from transformers import AutoModelForCausalLM, AutoTokenizer, get_linear_schedule_with_warmup
-from peft import get_peft_model, PromptTuningConfig, TaskType, PromptTuningInit
+from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
+from peft import get_peft_model
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
 from logging_config import settings
 from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts
+from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
 from models.base_bert import BertNerd
 from models.prompted_bert import PromptedBertNerd
 
@@ -71,12 +72,12 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         # Initialize the optimizer
         optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
-        # Intialize the linear scheduler for LR warmup
+        # Initialize the linear scheduler for LR warmup
         scheduler = get_linear_schedule_with_warmup(optimizer,
                                                     num_warmup_steps=cfg.scheduler.warmup_steps,
                                                     num_training_steps=len(train_dataloader)*cfg.train.num_epochs)
 
-        print(f"\t Training MBert on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
+        print(f"\t Training mBERT on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
         # Train MBert on NER task
         train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
                   optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
@@ -103,23 +104,25 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
         else: # Train soft prompts
             # Initialize the mBERT model
-            model = AutoModelForCausalLM.from_pretrained(cfg.model.name)
+            model = AutoModelForTokenClassification.from_pretrained(cfg.model.name)
 
-            peft_config = PromptTuningConfig(
-                task_type=TaskType.CAUSAL_LM,
-                prompt_tuning_init=PromptTuningInit.TEXT,
-                num_virtual_tokens=cfg.soft_prompts.num_virtual_tokens,
-                prompt_tuning_init_text="Classify NER tokens",
-                tokenizer_name_or_path=cfg.tokenizer.name,
-            )
+            # Initialize prompts according to the declared strategy
+            if cfg.soft_prompts.init_strategy == 'random':
+                peft_config = initialize_randomly(cfg.soft_prompts.num_virtual_tokens)
+            elif cfg.soft_prompts.init_strategy == 'task':
+                peft_config = initialize_with_task(cfg.soft_prompts.num_virtual_tokens,
+                                                   cfg.basic.task, model, tokenizer)
+            elif cfg.soft_prompts.init_strategy == 'normal':
+                peft_config = initialize_normal(cfg.soft_prompts.num_virtual_tokens, cfg.basic.hidden_size)
+
             model = get_peft_model(model, peft_config).to(device)
             model.print_trainable_parameters()
 
             # Initialize the optimizer
             optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
-            print("\t Training MBert on NER task with soft prompts.")
-            # Train MBert on NER task
+            print("\t Training mBERT on NER task with soft prompts.")
+            # Train mBERT on NER task
             train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader, test_dataloader=test_dataloader,
                                         optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device)
 
