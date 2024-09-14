@@ -26,8 +26,8 @@ def run_pipeline(cfg: DictConfig):
         wandb.login(key=settings.WANDB_API_KEY)
 
         # Uncomment for sweeps
-        #project_name = str(cfg.dataset.name) + "_" + str(cfg.soft_prompts.init_strategy) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
-        project_name = cfg.dataset.name + "_sweep"
+        project_name = str(cfg.dataset.name) + "_" + str(cfg.soft_prompts.init_strategy) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
+        #project_name = cfg.dataset.name + "_sweep"
 
         wandb.init(project=project_name, name=cfg.basic.wandb_run,
                    config=cfg_copy)
@@ -91,8 +91,8 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
         if cfg.soft_prompts.evaluate is True: # Zero-shot evaluation of soft prompts
             # Initialize the prompted mBERT model
-            soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
-            #soft_prompts_path = "soft_prompts/ner/5/random/8"
+            #soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+            soft_prompts_path = "soft_prompts/ner/20/normal/10"
 
             model = PromptedBertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes, soft_prompts_path).to(device)
 
@@ -107,7 +107,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
 
             train_prompted_ner(model=model, train_dataloader=train_dataloader,
-                      optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
                                num_tokens=cfg.soft_prompts.num_virtual_tokens, scheduler=scheduler)
 
             # Evaluate the model

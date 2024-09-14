@@ -1,5 +1,5 @@
 basic:
-  use_wandb: False
+  use_wandb: True
   with_soft_prompts: True
   wandb_run: Null
   padding_token: -100
