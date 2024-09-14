@@ -118,6 +118,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                           cfg.basic.task, model)
 
             model.to(device)
+            print(model)
             model.print_trainable_parameters()
 
             # Initialize the optimizer
