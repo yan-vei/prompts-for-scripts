@@ -5,7 +5,7 @@ parameters:
   dataset:
     values: [turkish-ner]
   train.num_epochs:
-    values: [10, 15]
+    values: [8, 10]
   basic.task:
     values: [NER]
   basic.lang:
@@ -16,6 +16,8 @@ parameters:
     values: [1, 5, 10, 20, 50]
   soft_prompts.evaluate:
     values: [False]
+  soft_prompts.init_strategy:
+    values: ['random', 'normal', 'task']
   optimizer.lr:
     values: [0.0001]
   optimizer.weight_decay:
