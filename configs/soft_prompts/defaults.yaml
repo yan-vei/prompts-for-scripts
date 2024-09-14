@@ -1,3 +1,3 @@
 num_virtual_tokens: 5
-evaluate: False
+evaluate: True
 init_strategy: random

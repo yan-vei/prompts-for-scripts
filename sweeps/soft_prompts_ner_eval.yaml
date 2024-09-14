@@ -1,0 +1,31 @@
+program: main.py
+name: soft-prompts-ner
+method: grid
+parameters:
+  dataset:
+    values: [kaznerd]
+  train.num_epochs:
+    values: [8, 10]
+  basic.task:
+    values: [NER]
+  basic.token_type:
+    values: ['tokens', 'latinized_tokens']
+  basic.lang:
+    values: [KZ]
+  basic.with_soft_prompts:
+    values: [True]
+  soft_prompts.num_virtual_tokens:
+    values: [1, 5, 10, 20, 50]
+  soft_prompts.evaluate:
+    values: [True]
+  soft_prompts.init_strategy:
+    values: ['random', 'normal', 'task']
+  optimizer.lr:
+    values: [0.0001]
+  optimizer.weight_decay:
+    values: [0.001]
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}

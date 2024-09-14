@@ -1,6 +1,5 @@
 import torch
 from transformers import BertModel
-from peft import PeftModel, PeftConfig
 
 
 class BertNerd(torch.nn.Module):
@@ -9,15 +8,10 @@ class BertNerd(torch.nn.Module):
         on Kazakh and Turkish languages.
     """
 
-    def __init__(self, name, device, hidden_size, num_classes, soft_prompts_path=None, freeze=True):
+    def __init__(self, name, device, hidden_size, num_classes, freeze=True):
         super(BertNerd, self).__init__()
         self.device = device
         self.mbert = BertModel.from_pretrained(name)
-
-        # If model is to be used with soft prompts, attach the matrix to the model
-        if soft_prompts_path is not None:
-            self.mbert = PeftModel.from_pretrained(self.mbert, soft_prompts_path)
-
         self.linear = torch.nn.Linear(hidden_size, num_classes)
 
         if freeze:

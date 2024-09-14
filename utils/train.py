@@ -101,11 +101,13 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
 
             inputs, attention_mask, labels = (batch["input_ids"].to(device), batch["attention_mask"].to(device),
                                               batch["labels"].to(device))
+
             # Make prediction
             logits = model(inputs, attention_mask)
+            loss_logits = logits.view(-1, logits.size(-1))
 
             # Calculate loss
-            batch_loss = loss_func(logits.view(-1, logits.size(-1)), labels.view(-1))
+            batch_loss = loss_func(loss_logits, labels.view(-1))
             loss_per_epoch += batch_loss.detach().item()
 
             # Get ids corresponding to the most probably NER tags
@@ -191,3 +193,77 @@ def evaluate_ner(model, val_dataloader, device, use_wandb=False):
         print(f"\tAccuracy on validation: {acc}")
 
     return accuracies
+
+
+
+def train_prompted_ner(model, scheduler, train_dataloader, optimizer, num_epochs, device, num_tokens,
+                       use_wandb=True):
+    """
+    Train soft prompts on Turkish for NER.
+    :param model: mBERT
+    :param tokenizer: mBERT tokenizer
+    :param train_dataloader: train data
+    :param test_dataloader: test data
+    :param optimizer: e.g. AdamW
+    :param num_epochs: int, specified in hydra config
+    :param device: CPU/GPU/MPS
+    :return: void
+    """
+    for epoch in range(num_epochs):
+        print(f'Training epoch {epoch + 1}/{num_epochs} started.')
+
+        # Set model in the training mode
+        model.train()
+
+        total_tokens = 0
+        total_correct = 0
+        loss_per_epoch = 0
+
+        logging_dict = {}
+
+
+        for idx, batch in enumerate(train_dataloader):
+            print(f'Training batch {idx+1} of {len(train_dataloader)}...')
+
+            batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Pad labels
+            labels = batch['labels']
+            padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
+            batch['labels'] = padded_labels
+
+            outputs = model(**batch)
+            loss = outputs.loss
+            loss_per_epoch += loss.detach().float()
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
+
+            logits = outputs.logits  # shape: (batch_size, seq_length, num_labels)
+            predictions = torch.argmax(logits, dim=-1)  # Get predicted labels (index with highest score)
+
+            # Mask padding tokens (-100) in both predictions and labels
+            mask = (padded_labels != -100)
+
+            # Apply the mask to predictions and labels
+            masked_predictions = predictions[mask]
+            masked_labels = padded_labels[mask]
+
+            # Calculate correct predictions
+            correct = (masked_predictions == masked_labels).sum().item()
+            total_correct += correct
+            total_tokens += mask.sum().item()  # Total valid tokens (excluding -100)
+
+            # Calculate average loss and accuracy for the epoch
+        avg_loss = loss_per_epoch / len(train_dataloader)
+        accuracy = total_correct / total_tokens if total_tokens > 0 else 0
+
+        # Log metrics into wandb
+        logging_dict["loss"] = loss_per_epoch
+        logging_dict["accuracy"] = accuracy
+
+        if use_wandb is True:
+            wandb.log(logging_dict)
+
+        print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {avg_loss:.4f}, Accuracy: {accuracy:.4f}')

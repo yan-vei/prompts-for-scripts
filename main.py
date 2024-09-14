@@ -3,10 +3,9 @@ import wandb
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
-from peft import get_peft_model
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
 from logging_config import settings
-from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts
+from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_prompted_ner
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
 from models.base_bert import BertNerd
 from models.prompted_bert import PromptedBertNerd
@@ -92,16 +91,27 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
         if cfg.soft_prompts.evaluate is True: # Zero-shot evaluation of soft prompts
             # Initialize the prompted mBERT model
-            model = PromptedBertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes,
-                                     "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" +
-                                     str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)).to(device)
+            soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+            #soft_prompts_path = "soft_prompts/ner/5/random/8"
+
+            model = PromptedBertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes, soft_prompts_path).to(device)
+
+            # Initialize the optimizer
+            optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
+
+            # Initialize the linear scheduler for LR warmup
+            scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                        num_warmup_steps=cfg.scheduler.warmup_steps,
+                                                        num_training_steps=len(train_dataloader) * cfg.train.num_epochs)
 
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
 
+            train_prompted_ner(model=model, train_dataloader=train_dataloader,
+                      optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                               num_tokens=cfg.soft_prompts.num_virtual_tokens, scheduler=scheduler)
+
             # Evaluate the model
             print("\t Training finished. Starting evaluation of mBERT on NER task.")
-            evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
-                         use_wandb=cfg.basic.use_wandb)
 
         else: # Train soft prompts
             # Initialize the mBERT model
