@@ -104,7 +104,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
         else: # Train soft prompts
             # Initialize the mBERT model
-            model = AutoModelForTokenClassification.from_pretrained(cfg.model.name)
+            model = AutoModelForTokenClassification.from_pretrained(cfg.model.name, num_labels=num_classes)
 
             # Initialize prompts according to the declared strategy
             if cfg.soft_prompts.init_strategy == 'random':
