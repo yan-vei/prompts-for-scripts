@@ -93,7 +93,8 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         if cfg.soft_prompts.evaluate is True: # Zero-shot evaluation of soft prompts
             # Initialize the prompted mBERT model
             model = PromptedBertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes,
-                                     "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens)).to(device)
+                                     "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" +
+                                     str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)).to(device)
 
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
 
@@ -131,8 +132,8 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             print("\t Soft prompts trained. Saving model...")
             model.save_pretrained("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
-                cfg.soft_prompts.init_strategy + "/" + str(cfg.train.num_epochs)
-            ))
+                cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+            )
 
 
 if __name__ == "__main__":
