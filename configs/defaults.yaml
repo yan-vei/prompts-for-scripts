@@ -6,7 +6,7 @@ basic:
   lang: KZ
   task: NER
   hidden_size: 768
-  token_type: latinized_tokens
+  token_type: tokens
 defaults:
   - _self_
   - model: mbert
