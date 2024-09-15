@@ -5,10 +5,10 @@ import hydra
 from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
 from logging_config import settings
-from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_prompted_ner
+from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
 from models.base_bert import BertNerd
-from models.prompted_bert import PromptedBertNerd
+from models.prompted_bert import PromptedBert
 
 
 @hydra.main(config_path='configs', config_name='defaults', version_base=None)
@@ -96,7 +96,8 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             print(f'Loading soft prompts from {soft_prompts_path}...')
 
-            model = PromptedBertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes, soft_prompts_path).to(device)
+            model = PromptedBert(name=cfg.model.name, device=device, hidden_size=cfg.basic.hidden_size,
+                                     num_classes=num_classes, soft_prompts_path=soft_prompts_path).to(device)
 
             # Initialize the optimizer
             optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
@@ -108,9 +109,8 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
 
-            train_prompted_ner(model=model, train_dataloader=train_dataloader,
-                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
-                               num_tokens=cfg.soft_prompts.num_virtual_tokens, scheduler=scheduler)
+            train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True, num_tokens=cfg.soft_prompts.num_virtual_tokens,
+                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler)
 
             # Evaluate the model
             print("\t Training finished. Starting evaluation of mBERT on NER task.")
