@@ -9,8 +9,12 @@ class PromptedBert(torch.nn.Module):
         super().__init__()
         self.device = device
         self.name = name
+
+        # Model layers
         self.mbert = BertModel.from_pretrained(self.name)
         self.linear = torch.nn.Linear(hidden_size, num_classes)
+
+        # Soft prompts
         self.soft_prompts_path = soft_prompts_path
         self.num_orig_ner_labels = num_orig_ner_labels # original number of labels in Turkish NER
         self.soft_prompts = self.extract_soft_prompts().to(self.device)

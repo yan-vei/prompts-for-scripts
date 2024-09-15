@@ -15,7 +15,7 @@ from models.prompted_bert import PromptedBert
 def run_pipeline(cfg: DictConfig):
     """
     Define the run managed by hydra configs
-    :param cfg:
+    :param cfg: hydra config
     :return: void
     """
 
@@ -25,9 +25,7 @@ def run_pipeline(cfg: DictConfig):
         cfg_copy = OmegaConf.to_container(cfg, resolve=True)
         wandb.login(key=settings.WANDB_API_KEY)
 
-        # Uncomment for sweeps
-        project_name = str(cfg.dataset.name) + "_" + str(cfg.soft_prompts.init_strategy) + "_" + str(cfg.soft_prompts.num_virtual_tokens)
-        #project_name = cfg.dataset.name + "_sweep"
+        project_name = cfg.dataset.name
 
         wandb.init(project=project_name, name=cfg.basic.wandb_run,
                    config=cfg_copy)
@@ -48,9 +46,17 @@ def run_pipeline(cfg: DictConfig):
 
 
 def run_ner_pipeline(cfg: DictConfig, lossfn, device):
+    """
+    Run the pipeline for NER baseline and soft prompts.
+    :param cfg: hydra config
+    :param lossfn: CrossEntropy
+    :param device: GPU/CPU/MPS
+    :return: void
+    """
 
     # Instantiate tokenizer and create dataloaders for the respective language
     tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
+
     if cfg.basic.lang == 'KZ':
         train_dataloader, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.basic.token_type,
                                                                                   cfg.dataset.train_path,
@@ -63,7 +69,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                                                                   cfg.dataset.test_path,
                                                                                   cfg.basic.padding_token,
                                                                                   cfg.dataset.batch_size)
-
+    # Baseline runs
     if cfg.basic.with_soft_prompts is False:
         # Initialize a mBERT model with a linear layer on top
         model = BertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes).to(device)
@@ -87,16 +93,18 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
                      use_wandb=cfg.basic.use_wandb)
 
+    # Training or evaluating soft prompts
     elif cfg.basic.with_soft_prompts is True:
 
-        if cfg.soft_prompts.evaluate is True: # Zero-shot evaluation of soft prompts
-            # Initialize the prompted mBERT model
-            soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+        if cfg.soft_prompts.evaluate is True:
 
+            soft_prompts_path = ("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" +
+                                 str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs))
             print(f'Loading soft prompts from {soft_prompts_path}...')
 
+            # Initialize the model with prompts
             model = PromptedBert(name=cfg.model.name, device=device, hidden_size=cfg.basic.hidden_size,
-                                    num_classes=num_classes, soft_prompts_path=soft_prompts_path,
+                                 num_classes=num_classes, soft_prompts_path=soft_prompts_path,
                                  num_orig_ner_labels=cfg.basic.num_orig_ner_labels).to(device)
 
             # Initialize the optimizer
@@ -109,15 +117,17 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
             # Train model
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
-            train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True, num_tokens=cfg.soft_prompts.num_virtual_tokens,
-                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=cfg.basic.use_wandb)
+            train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True,
+                      num_tokens=cfg.soft_prompts.num_virtual_tokens, optimizer=optimizer,
+                      num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=cfg.basic.use_wandb)
 
             # Evaluate the model
             print("\t Training finished. Starting evaluation of mBERT on NER task.")
             evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
-                         use_wandb=cfg.basic.use_wandb, with_soft_prompts=True, num_tokens=cfg.soft_prompts.num_virtual_tokens)
+                         use_wandb=cfg.basic.use_wandb, with_soft_prompts=True,
+                         num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
-        else: # Train soft prompts
+        else:
             # Initialize the mBERT model
             model = AutoModelForTokenClassification.from_pretrained(cfg.model.name, num_labels=num_classes)
 
@@ -133,6 +143,8 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                           cfg.basic.task, model)
 
             model.to(device)
+
+            # Check that the soft prompts have been correctly initialized
             model.print_trainable_parameters()
 
             # Initialize the optimizer
@@ -143,6 +155,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
             train_ner_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader, test_dataloader=test_dataloader,
                                         optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
+            # Save the trained model
             print("\t Soft prompts trained. Saving model...")
             model.save_pretrained("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
                 cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)

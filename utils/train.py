@@ -13,6 +13,7 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
     :param optimizer: e.g. AdamW
     :param num_epochs: int, specified in hydra config
     :param device: CPU/GPU/MPS
+    :param num_tokens: number of tokens to train
     :return: void
     """
     for epoch in range(num_epochs):
@@ -26,44 +27,51 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
         for idx, batch in enumerate(train_dataloader):
             print(f'Training batch {idx+1} of {len(train_dataloader)}...')
 
+            # Unpack the batch
             batch = {k: v.to(device) for k, v in batch.items()}
 
-            # Pad labels
+            # Pad labels to the length of the tokens
             labels = batch['labels']
             padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
             batch['labels'] = padded_labels
 
+            # Forward pass and loss computation
             outputs = model(**batch)
             loss = outputs.loss
             loss_per_epoch += loss.detach().float()
+
+            # Backpropagate
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
 
+        # Evaluate model's performance per epoch
         model.eval()
         eval_loss = 0
-        eval_preds = []
+
         for batch in test_dataloader:
+            # Unpack the batch
             batch = {k: v.to(device) for k, v in batch.items()}
 
-            # Pad labels again:
+            # Pad labels again (to match num of soft prompt tokens):
             labels = batch['labels']
             padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
             batch['labels'] = padded_labels
 
+            # No backprop, since evaluation
             with torch.no_grad():
                 outputs = model(**batch)
+
+            # Compute loss
             loss = outputs.loss
             eval_loss += loss.detach().float()
-            eval_preds.extend(
-                tokenizer.batch_decode(torch.argmax(outputs.logits, -1).detach().cpu().numpy(),
-                                       skip_special_tokens=True)
-            )
 
+        # Log metrics to console
         eval_epoch_loss = eval_loss / len(test_dataloader)
         eval_ppl = torch.exp(eval_epoch_loss)
         train_epoch_loss = loss_per_epoch / len(train_dataloader)
         train_ppl = torch.exp(train_epoch_loss)
+
         print(f"{epoch=}: {train_ppl=} {train_epoch_loss=} {eval_ppl=} {eval_epoch_loss=}")
 
 
@@ -77,6 +85,8 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
     :param optimizer: e.g. AdamW
     :param scheduler: use for warmup
     :param num_epochs: int, specified in hydra config
+    :param with_soft_prompts: whether to use soft prompts or not
+    :param num_tokens: int, number of soft prompt tokens
     :param device: CPU/GPU/MPS
     :param use_wandb: bool, needed for logging
     :return: void
@@ -84,7 +94,6 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
     accuracies = []
 
     for epoch in range(num_epochs):
-
         # Metrics to be logged into wandb
         logging_dict = {}
 
@@ -158,6 +167,8 @@ def evaluate_ner(model, val_dataloader, device, num_tokens=None, with_soft_promp
     :param model: mBERT
     :param val_dataloader: evaluation data
     :param device: CPU/GPU/MPS
+    :param num_tokens: number of soft prompt tokens
+    :param with_soft_prompts: whether to use soft prompts or not
     :param use_wandb: bool, needed for logging
     :return: void
     """

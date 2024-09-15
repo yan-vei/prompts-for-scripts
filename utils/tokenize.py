@@ -1,6 +1,3 @@
-import random
-
-
 def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding_token=-100, labels_dict=None, str2int=False):
     """
     Tokenizing function for NER task for Kazakh and Turkish
@@ -51,72 +48,3 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
 
     tokenized_inputs["labels"] = labels
     return tokenized_inputs
-
-
-def tokenize_and_align_retrieval_pairs(batch, tokenizer):
-    """
-    Tokenize queries, positive and negative passages for QAD
-    :param batch: queries, positive and negative passages
-    :param tokenizer: e.g. mBERT tokenizer
-    :return: dict with tokenized queries, positive and negative passages
-    """
-
-    query_encodings = tokenizer(
-        batch['query'],
-        padding='max_length',
-        truncation=True,
-        max_length=512,
-        return_tensors='pt'
-    )
-
-    positive_encodings = tokenizer(
-        batch['positive_passage'],
-        padding='max_length',
-        truncation=True,
-        max_length=512,
-        return_tensors='pt'
-    )
-
-    negative_encodings = tokenizer(
-        batch['negative_passage'],
-        padding='max_length',
-        truncation=True,
-        max_length=512,
-        return_tensors='pt'
-    )
-
-    return {
-        'query_input_ids': query_encodings['input_ids'].squeeze(),
-        'query_attention_mask': query_encodings['attention_mask'].squeeze(),
-        'positive_input_ids': positive_encodings['input_ids'].squeeze(),
-        'positive_attention_mask': positive_encodings['attention_mask'].squeeze(),
-        'negative_input_ids': negative_encodings['input_ids'].squeeze(),
-        'negative_attention_mask': negative_encodings['attention_mask'].squeeze()
-    }
-
-
-def get_retrieval_pairs(example, dataset):
-    """
-    Organize retrieval pairs from QAD. Make sure that negative contexts are taken
-    from different samples in the same dataset.
-    :param example: current example
-    :param dataset: Dataset object
-    :return: dict with query, positive and negative passages, and answer
-    """
-
-    query = example['question']
-    positive_passage = example['context']
-
-    # Select a random context from another example for a negative passage
-    random_idx = random.randint(0, len(dataset) - 1)
-    while dataset[random_idx]['id'] == example['id']:
-        random_idx = random.randint(0, len(dataset) - 1)
-
-    negative_passage = dataset[random_idx]['context']
-
-    return {
-        'query': query,
-        'positive_passage': positive_passage,
-        'negative_passage': negative_passage,
-        'answer': example['answers']
-    }

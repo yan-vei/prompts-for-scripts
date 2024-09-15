@@ -46,6 +46,8 @@ def initialize_normal(num_tokens, hidden_size, task, model):
     Initialize the soft prompt embeddings with normal distribution.
     :param num_tokens: int, number of tokens in the soft prompt
     :param hidden_size: hidden dim of the model, e.g. 768
+    :param task: str, name of the task
+    :param model: e.g. mBERT
     :return: PromptTuningConfig
     """
 
@@ -60,6 +62,7 @@ def initialize_normal(num_tokens, hidden_size, task, model):
     peft_model = get_peft_model(model, peft_config)
 
     # Replace the soft embeddings random init with normal
+    # Since the original library doesn't allow normal distribution initialization
     with torch.no_grad():
         peft_model.prompt_encoder['default'].embedding.weight.data.copy_(init_embeddings)
 

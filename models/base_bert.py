@@ -41,18 +41,3 @@ class BertNerd(torch.nn.Module):
 
         for param in self.mbert.parameters():
             param.requires_grad = False
-
-    def get_params(self):
-        """
-        Return tunable parameters of the model.
-
-        :return: list of tunable params
-        """
-
-        params = []
-
-        for param in self.parameters():
-            if param.requires_grad:
-                params.append(param)
-
-        return params
