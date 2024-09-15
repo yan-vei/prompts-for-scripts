@@ -7,6 +7,7 @@ basic:
   task: NER
   hidden_size: 768
   token_type: tokens
+  num_orig_ner_labels: 39
 defaults:
   - _self_
   - model: mbert

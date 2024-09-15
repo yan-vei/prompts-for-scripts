@@ -21,7 +21,7 @@ parameters:
   soft_prompts.init_strategy:
     values: ['random', 'normal', 'task']
   optimizer.lr:
-    values: [0.0001]
+    values: [0.0001, 0.00001]
   optimizer.weight_decay:
     values: [0.001, 0.0001]
 command:

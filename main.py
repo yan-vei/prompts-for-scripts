@@ -65,7 +65,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                                                                   cfg.dataset.batch_size)
 
     if cfg.basic.with_soft_prompts is False:
-        # Initialize a MBert model with a linear layer on top
+        # Initialize a mBERT model with a linear layer on top
         model = BertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes).to(device)
 
         # Initialize the optimizer
@@ -77,7 +77,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                                     num_training_steps=len(train_dataloader)*cfg.train.num_epochs)
 
         print(f"\t Training mBERT on NER task without soft prompts with tokens of type {cfg.basic.token_type}")
-        # Train MBert on NER task
+        # Train mBERT on NER task
         train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
                   optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
                   use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
@@ -92,12 +92,12 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
         if cfg.soft_prompts.evaluate is True: # Zero-shot evaluation of soft prompts
             # Initialize the prompted mBERT model
             soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
-            #soft_prompts_path = "soft_prompts/ner/20/normal/10"
 
             print(f'Loading soft prompts from {soft_prompts_path}...')
 
             model = PromptedBert(name=cfg.model.name, device=device, hidden_size=cfg.basic.hidden_size,
-                                     num_classes=num_classes, soft_prompts_path=soft_prompts_path).to(device)
+                                    num_classes=num_classes, soft_prompts_path=soft_prompts_path,
+                                 num_orig_ner_labels=cfg.basic.num_orig_ner_labels).to(device)
 
             # Initialize the optimizer
             optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
@@ -107,13 +107,15 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                                         num_warmup_steps=cfg.scheduler.warmup_steps,
                                                         num_training_steps=len(train_dataloader) * cfg.train.num_epochs)
 
+            # Train model
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
-
             train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True, num_tokens=cfg.soft_prompts.num_virtual_tokens,
-                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler)
+                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=True)
 
             # Evaluate the model
             print("\t Training finished. Starting evaluation of mBERT on NER task.")
+            evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
+                         use_wandb=cfg.basic.use_wandb, with_soft_prompts=True, num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
         else: # Train soft prompts
             # Initialize the mBERT model
@@ -131,7 +133,6 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
                                           cfg.basic.task, model)
 
             model.to(device)
-            print(model)
             model.print_trainable_parameters()
 
             # Initialize the optimizer

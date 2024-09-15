@@ -152,7 +152,7 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
     return model, accuracies
 
 
-def evaluate_ner(model, val_dataloader, device, use_wandb=False):
+def evaluate_ner(model, val_dataloader, device, num_tokens=None, with_soft_prompts=False, use_wandb=False):
     """
     Baseline evaluation on NER task.
     :param model: mBERT
@@ -182,6 +182,10 @@ def evaluate_ner(model, val_dataloader, device, use_wandb=False):
             logits = model(inputs, attention_mask)
             permutated_logits = logits.permute(0, 2, 1)
             predicted_tags = torch.max(permutated_logits, dim=1).indices
+
+            # Pad labels in case we are training with soft prompts
+            if with_soft_prompts is True:
+                labels = torch.nn.functional.pad(batch['labels'], (num_tokens, 0), value=-100).to(device)
 
             # Calculate validation accuracy
             correct_in_batch, total_in_batch = get_accuracy(predicted_tags, labels)
