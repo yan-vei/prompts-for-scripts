@@ -110,7 +110,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
             # Train model
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
             train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True, num_tokens=cfg.soft_prompts.num_virtual_tokens,
-                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=True)
+                                optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=cfg.basic.use_wandb)
 
             # Evaluate the model
             print("\t Training finished. Starting evaluation of mBERT on NER task.")

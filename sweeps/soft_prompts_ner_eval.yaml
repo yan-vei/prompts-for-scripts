@@ -8,6 +8,8 @@ parameters:
     values: [8, 10]
   basic.task:
     values: [NER]
+  basic.use_wandb:
+    values: [True]
   basic.token_type:
     values: ['tokens', 'latinized_tokens']
   basic.lang:
