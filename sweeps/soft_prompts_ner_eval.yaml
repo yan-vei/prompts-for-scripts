@@ -5,7 +5,7 @@ parameters:
   dataset:
     values: [kaznerd]
   train.num_epochs:
-    values: [8, 10]
+    values: [10]
   basic.task:
     values: [NER]
   basic.token_type:
@@ -23,7 +23,7 @@ parameters:
   optimizer.lr:
     values: [0.0001]
   optimizer.weight_decay:
-    values: [0.001]
+    values: [0.001, 0.0001]
 command:
   - ${env}
   - python
