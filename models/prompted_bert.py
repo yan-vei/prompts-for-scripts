@@ -12,6 +12,9 @@ class PromptedBert(torch.nn.Module):
         self.soft_prompts = self.extract_soft_prompts(name, soft_prompts_path).to(self.device)
         self.num_prompts = self.soft_prompts.size(0)
 
+        for param in self.model.parameters():
+            param.requires_grad = False
+
     def extract_soft_prompts(self, name, soft_prompts_path):
         model = BertForTokenClassification.from_pretrained(name, num_labels=39)
         peft_model = PeftModel.from_pretrained(model, soft_prompts_path)
