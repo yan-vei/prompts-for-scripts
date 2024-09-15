@@ -5,7 +5,7 @@ parameters:
   dataset:
     values: [kaznerd]
   train.num_epochs:
-    values: [10]
+    values: [8, 10]
   basic.task:
     values: [NER]
   basic.token_type:

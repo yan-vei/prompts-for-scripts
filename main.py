@@ -91,8 +91,10 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device):
 
         if cfg.soft_prompts.evaluate is True: # Zero-shot evaluation of soft prompts
             # Initialize the prompted mBERT model
-            #soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
-            soft_prompts_path = "soft_prompts/ner/20/normal/10"
+            soft_prompts_path = "soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+            #soft_prompts_path = "soft_prompts/ner/20/normal/10"
+
+            print(f'Loading soft prompts from {soft_prompts_path}...')
 
             model = PromptedBertNerd(cfg.model.name, device, cfg.basic.hidden_size, num_classes, soft_prompts_path).to(device)
 
