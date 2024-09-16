@@ -25,7 +25,7 @@ def run_pipeline(cfg: DictConfig):
         cfg_copy = OmegaConf.to_container(cfg, resolve=True)
         wandb.login(key=settings.WANDB_API_KEY)
 
-        project_name = cfg.dataset.name
+        project_name = cfg.dataset.name + "fine-tuned"
 
         wandb.init(project=project_name, name=cfg.basic.wandb_run,
                    config=cfg_copy)
