@@ -10,6 +10,8 @@ parameters:
     values: [NER]
   basic.lang:
     values: [TR]
+  basic.token_type:
+    values: ['tokens']
   basic.with_soft_prompts:
     values: [True]
   soft_prompts.num_virtual_tokens:
