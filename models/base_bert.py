@@ -8,7 +8,7 @@ class BertNerd(torch.nn.Module):
         on Kazakh and Turkish languages.
     """
 
-    def __init__(self, name, device, hidden_size, num_classes, freeze=False):
+    def __init__(self, name, device, hidden_size, num_classes, freeze=True):
         super(BertNerd, self).__init__()
         self.device = device
         self.mbert = BertModel.from_pretrained(name)
