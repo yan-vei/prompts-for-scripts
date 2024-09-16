@@ -5,7 +5,7 @@ parameters:
   dataset:
     values: [turkish-ner]
   train.num_epochs:
-    values: [8, 10]
+    values: [15, 30, 50]
   basic.task:
     values: [NER]
   basic.lang:
@@ -13,11 +13,11 @@ parameters:
   basic.with_soft_prompts:
     values: [True]
   soft_prompts.num_virtual_tokens:
-    values: [1, 5, 10, 20, 50]
+    values: [1, 20, 50]
   soft_prompts.evaluate:
     values: [False]
   soft_prompts.init_strategy:
-    values: ['random', 'normal', 'task']
+    values: ['random', 'task']
   optimizer.lr:
     values: [0.0001]
   optimizer.weight_decay:

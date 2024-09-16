@@ -5,4 +5,3 @@ wandb
 outputs
 *cache*.arrow
 .DS_Store
-scratch.py
