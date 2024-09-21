@@ -1,0 +1,79 @@
+{
+  "builder_name": "tquad",
+  "citation": "",
+  "config_name": "plain_text",
+  "dataset_name": "tquad",
+  "dataset_size": 12011004,
+  "description": "",
+  "download_checksums": {
+    "https://raw.githubusercontent.com/TQuad/turkish-nlp-qa-dataset/master/train-v0.1.json": {
+      "num_bytes": 3078146,
+      "checksum": null
+    },
+    "https://raw.githubusercontent.com/TQuad/turkish-nlp-qa-dataset/master/dev-v0.1.json": {
+      "num_bytes": 458494,
+      "checksum": null
+    }
+  },
+  "download_size": 3536640,
+  "features": {
+    "id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "title": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "context": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "question": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "answers": {
+      "feature": {
+        "text": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "answer_start": {
+          "dtype": "int32",
+          "_type": "Value"
+        }
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "https://github.com/TQuad/turkish-nlp-qa-dataset",
+  "license": "",
+  "size_in_bytes": 15547644,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 10647492,
+      "num_examples": 8308,
+      "dataset_name": "tquad"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 1363512,
+      "num_examples": 892,
+      "dataset_name": "tquad"
+    }
+  },
+  "task_templates": [
+    {
+      "task": "question-answering-extractive"
+    }
+  ],
+  "version": {
+    "version_str": "1.0.0",
+    "description": "",
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  }
+}
