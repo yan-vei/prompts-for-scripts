@@ -48,3 +48,80 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
 
     tokenized_inputs["labels"] = labels
     return tokenized_inputs
+
+def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_stride=128):
+    # Tokenize the contexts and questions
+    tokenized_examples = tokenizer(
+        examples['question'],
+        examples['context'],
+        max_length=max_length,
+        truncation="only_second",
+        stride=doc_stride,
+        return_overflowing_tokens=True,
+        return_offsets_mapping=True,
+        padding="max_length",
+    )
+
+    # Since one example might give us several features if it has a long context,
+    # we need a map from a feature to its corresponding example.
+    sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
+    offset_mapping = tokenized_examples.pop("offset_mapping")
+
+    # Let's label those examples!
+    start_positions = []
+    end_positions = []
+
+    for i, offsets in enumerate(offset_mapping):
+        # Get the example index corresponding to this feature
+        sample_index = sample_mapping[i]
+        answers = examples["answers"][sample_index]
+
+        # Start/end character index of the answer in the text
+        answer_start = answers["answer_start"][0]
+        answer_end = answer_start + len(answers["text"][0])
+
+        # Start token index of the current span in the text
+        sequence_ids = tokenized_examples.sequence_ids(i)
+
+        # Find the start and end of the context
+        idx = 0
+        while sequence_ids[idx] != 1:
+            idx += 1
+        context_start = idx
+        while sequence_ids[idx] == 1:
+            idx += 1
+        context_end = idx - 1
+
+        # If the answer is not fully inside the context, label it (0, 0)
+        if not (offsets[context_start][0] <= answer_start and offsets[context_end][1] >= answer_end):
+            start_positions.append(0)
+            end_positions.append(0)
+        else:
+            # Otherwise move the token_start and token_end to the start and end locations of the answer
+            token_start_index = context_start
+            token_end_index = context_end
+
+            # Find the start token index
+            while token_start_index <= context_end and offsets[token_start_index][0] <= answer_start:
+                token_start_index += 1
+            start_positions.append(token_start_index - 1)
+
+            # Find the end token index
+            while token_end_index >= context_start and offsets[token_end_index][1] >= answer_end:
+                token_end_index -= 1
+            end_positions.append(token_end_index + 1)
+
+    tokenized_examples["start_positions"] = start_positions
+    tokenized_examples["end_positions"] = end_positions
+
+    return tokenized_examples
+
+
+"""
+
+    if token_type == 'latinized':
+        question_label, context_label, answers_label = 'latinized_question', 'latinized_context', 'latinized_answers'
+    elif token_type == 'tokens':
+        question_label, context_label, answers_label = 'question', 'context', 'answers'
+
+"""

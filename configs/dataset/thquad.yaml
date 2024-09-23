@@ -1,0 +1,6 @@
+name: thquad
+train_path: datasets/thquad-train.hf
+test_path: datasets/thquad-test.hf
+batch_size: 16
+max_length: 384
+doc_stride: 128

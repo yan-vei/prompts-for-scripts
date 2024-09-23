@@ -3,11 +3,11 @@ import wandb
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
-from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader
+from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader, create_turkish_qa_dataloader
 from logging_config import settings
 from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
-from models.base_bert import BertNerd
+from models.base_bert import BertNerd, BertQA
 from models.prompted_bert import PromptedBert
 
 
@@ -33,29 +33,48 @@ def run_pipeline(cfg: DictConfig):
     # Initialize the loss function
     lossfn = hydra.utils.instantiate(cfg.loss)
 
+    # Instantiate the tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
+
     # Initialize a device (cpu, gpu or mps (Apple Sillicon))
     device = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
     print(f'\tConfigured loss function: {str(lossfn)} and device: {device}.')
 
     if cfg.basic.task == 'NER':
-        run_ner_pipeline(cfg, lossfn, device)
+        run_ner_pipeline(cfg, lossfn, device, tokenizer)
+    elif cfg.basic.task == 'QA':
+        run_qa_pipeline(cfg, lossfn, device, tokenizer)
 
     if use_wandb:
         wandb.finish()
 
 
-def run_ner_pipeline(cfg: DictConfig, lossfn, device):
+def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
     """
-    Run the pipeline for NER baseline and soft prompts.
+    Run the pipeline for QA baseline and soft prompts.
     :param cfg: hydra config
     :param lossfn: CrossEntropy
     :param device: GPU/CPU/MPS
     :return: void
     """
 
-    # Instantiate tokenizer and create dataloaders for the respective language
-    tokenizer = AutoTokenizer.from_pretrained(cfg.tokenizer.name)
+    if cfg.basic.lang == 'TR':
+        train_dataloader, test_dataloader = create_turkish_qa_dataloader(tokenizer=tokenizer, train_path=cfg.dataset.train_path,
+                                                                         test_path=cfg.dataset.test_path, batch_size=cfg.dataset.batch_size,
+                                                                         max_length=cfg.dataset.max_length, doc_stride=cfg.dataset.doc_stride)
+
+
+
+def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
+    """
+    Run the pipeline for NER baseline and soft prompts.
+    :param cfg: hydra config
+    :param lossfn: CrossEntropy
+    :param device: GPU/CPU/MPS
+    :param tokenizer: tokenizer, e.g. BertTokenizerFast
+    :return: void
+    """
 
     if cfg.basic.lang == 'KZ':
         train_dataloader, test_dataloader, num_classes = create_kaznerd_dataloader(tokenizer, cfg.basic.token_type,

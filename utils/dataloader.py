@@ -1,6 +1,6 @@
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
-from .tokenize import tokenize_and_align_labels_ner
+from .tokenize import tokenize_and_align_labels_ner, tokenize_and_align_turkish_qa
 
 
 def create_turkish_ner_dataloader(tokenizer, token_type, train_path, test_path, padding_token, batch_size):
@@ -48,6 +48,7 @@ def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padd
     :param batch_size: specified in config
     :param train_path: path to train dataset
     :param test_path: path to test dataset
+    :param token_type: type of the tokens (latinized/not)
     :param padding_token: padding token
     :return: train dataloder, test dataloader, num classes
     """
@@ -83,3 +84,38 @@ def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padd
     kz_test_dataloader = DataLoader(kz_tokenized_test, batch_size=batch_size)
 
     return kz_train_dataloader, kz_test_dataloader, len(kz_labels_list)
+
+
+def create_turkish_qa_dataloader(tokenizer, train_path, test_path, batch_size, max_length=384, doc_stride=128):
+    """
+    Load and tokenize the TurkishNER dataset
+    :param tokenizer: tokenizer object
+    :param train_path: path to train dataset
+    :param test_path: path to test dataset
+    :param max_length: maximum length of sequence
+    :param doc_stride: document stride
+    :param batch_size: specified in config
+    :return: train dataloader, test dataloader, num classes
+    """
+
+    turkish_qa_train = load_from_disk(train_path)
+    turkish_qa_test = load_from_disk(test_path)
+
+    # Tokenize and create dataloaders for Turkish QA dataset
+    tr_tokenized_train = turkish_qa_train.map(
+        lambda e: tokenize_and_align_turkish_qa(e, tokenizer=tokenizer, max_length=max_length, doc_stride=doc_stride),
+        batched=True,
+        remove_columns=turkish_qa_train.column_names,
+    )
+    tr_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'])
+
+    tr_tokenized_test = turkish_qa_test.map(
+        lambda e: tokenize_and_align_turkish_qa(e, tokenizer=tokenizer, max_length=max_length, doc_stride=doc_stride),
+        batched=True, batch_size=batch_size,
+        remove_columns=turkish_qa_test.column_names,)
+    tr_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'])
+
+    tr_train_dataloder = DataLoader(tr_tokenized_train, batch_size=batch_size)
+    tr_test_dataloader = DataLoader(tr_tokenized_test, batch_size=batch_size)
+
+    return tr_train_dataloder, tr_test_dataloader
