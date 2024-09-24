@@ -50,19 +50,12 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
     return tokenized_inputs
 
 
-def tokenize_and_align_kazakh_qa(examples, token_type, tokenizer, max_length=384, doc_stride=128):
-
-
-    # Make sure you are operating on a correct token type
-    if token_type == 'latinized':
-        question_label, context_label, answers_label = 'latinized_question', 'latinized_context', 'latinized_answers'
-    elif token_type == 'tokens':
-        question_label, context_label, answers_label = 'question', 'context', 'answers'
+def tokenize_and_align_turkish_qa(examples, token_type, tokenizer, max_length=384, doc_stride=128):
 
     # Tokenize the contexts and questions
     tokenized_examples = tokenizer(
-            examples[question_label],
-            examples[context_label],
+            examples['question'],
+            examples['context'],
             max_length=max_length,
             truncation="only_second",
             stride=doc_stride,
@@ -86,7 +79,7 @@ def tokenize_and_align_kazakh_qa(examples, token_type, tokenizer, max_length=384
         answers = examples["answers"][sample_index]
 
         # Start/end character index of the answer in the text
-        answer_start = examples["answer_start"][0]
+        answer_start = answers["answer_start"][0]
         answer_end = answer_start + len(answers["text"][0])
 
         # Start token index of the current span in the text
