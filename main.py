@@ -2,10 +2,10 @@ import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
 import hydra
-from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
+from transformers import AutoModelForTokenClassification, AutoModelForQuestionAnswering, AutoTokenizer, get_linear_schedule_with_warmup
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader, create_turkish_qa_dataloader
 from logging_config import settings
-from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_qa, evaluate_qa
+from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_qa, train_qa_with_soft_prompts, evaluate_qa
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
 from models.base_bert import BertNerd, BertQA
 from models.prompted_bert import PromptedBert
@@ -85,8 +85,39 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
 
         # Evaluate the model
         print("\t Training finished. Starting evaluation of mBERT on QA task.")
-        evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
+        evaluate_qa(model=model, val_dataloader=test_dataloader, device=device,
                      use_wandb=cfg.basic.use_wandb, tokenizer=tokenizer)
+
+    # Training or evaluating soft prompts
+    elif cfg.basic.with_soft_prompts is True:
+
+        # Initialize the mBERT model
+        model = AutoModelForQuestionAnswering.from_pretrained(cfg.model.name)
+
+        # Initialize prompts according to the declared strategy
+        if cfg.soft_prompts.init_strategy == 'random':
+            model = initialize_randomly(cfg.soft_prompts.num_virtual_tokens,
+                                        cfg.basic.task, model)
+        elif cfg.soft_prompts.init_strategy == 'task':
+            model = initialize_with_task(cfg.soft_prompts.num_virtual_tokens,
+                                         cfg.basic.task, model, cfg.tokenizer.name)
+        elif cfg.soft_prompts.init_strategy == 'normal':
+            model = initialize_normal(cfg.soft_prompts.num_virtual_tokens, cfg.basic.hidden_size,
+                                      cfg.basic.task, model)
+
+        model.to(device)
+
+        # Check that the soft prompts have been correctly initialized
+        model.print_trainable_parameters()
+
+        # Initialize the optimizer
+        optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
+
+        print("\t Training mBERT on QA task with soft prompts.")
+        train_qa_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader,
+                                    test_dataloader=test_dataloader,
+                                    optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                                    num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
 
 def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):

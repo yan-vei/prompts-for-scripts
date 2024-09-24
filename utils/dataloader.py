@@ -50,7 +50,7 @@ def create_kaznerd_dataloader(tokenizer, token_type, train_path, test_path, padd
     :param test_path: path to test dataset
     :param token_type: type of the tokens (latinized/not)
     :param padding_token: padding token
-    :return: train dataloder, test dataloader, num classes
+    :return: train dataloader, test dataloader, num classes
     """
     kaznerd_train = load_from_disk(train_path)
     kaznerd_test = load_from_disk(test_path)

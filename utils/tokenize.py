@@ -49,18 +49,27 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
     tokenized_inputs["labels"] = labels
     return tokenized_inputs
 
-def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_stride=128):
+
+def tokenize_and_align_kazakh_qa(examples, token_type, tokenizer, max_length=384, doc_stride=128):
+
+
+    # Make sure you are operating on a correct token type
+    if token_type == 'latinized':
+        question_label, context_label, answers_label = 'latinized_question', 'latinized_context', 'latinized_answers'
+    elif token_type == 'tokens':
+        question_label, context_label, answers_label = 'question', 'context', 'answers'
+
     # Tokenize the contexts and questions
     tokenized_examples = tokenizer(
-        examples['question'],
-        examples['context'],
-        max_length=max_length,
-        truncation="only_second",
-        stride=doc_stride,
-        return_overflowing_tokens=True,
-        return_offsets_mapping=True,
-        padding="max_length",
-    )
+            examples[question_label],
+            examples[context_label],
+            max_length=max_length,
+            truncation="only_second",
+            stride=doc_stride,
+            return_overflowing_tokens=True,
+            return_offsets_mapping=True,
+            padding="max_length",
+        )
 
     # Since one example might give us several features if it has a long context,
     # we need a map from a feature to its corresponding example.
@@ -77,7 +86,7 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
         answers = examples["answers"][sample_index]
 
         # Start/end character index of the answer in the text
-        answer_start = answers["answer_start"][0]
+        answer_start = examples["answer_start"][0]
         answer_end = answer_start + len(answers["text"][0])
 
         # Start token index of the current span in the text
@@ -115,13 +124,3 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
     tokenized_examples["end_positions"] = end_positions
 
     return tokenized_examples
-
-
-"""
-
-    if token_type == 'latinized':
-        question_label, context_label, answers_label = 'latinized_question', 'latinized_context', 'latinized_answers'
-    elif token_type == 'tokens':
-        question_label, context_label, answers_label = 'question', 'context', 'answers'
-
-"""

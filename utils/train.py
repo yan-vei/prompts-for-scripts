@@ -3,6 +3,10 @@ import wandb
 from .metrics import get_accuracy, normalize_answer, compute_f1_score, compute_exact_match
 
 
+def train_qa_with_soft_prompts():
+    pass
+
+
 def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):
     """
     Train soft prompts on Turkish for NER.
