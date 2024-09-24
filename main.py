@@ -5,7 +5,7 @@ import hydra
 from transformers import AutoModelForTokenClassification, AutoTokenizer, get_linear_schedule_with_warmup
 from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader, create_turkish_qa_dataloader
 from logging_config import settings
-from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts
+from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_qa, evaluate_qa
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
 from models.base_bert import BertNerd, BertQA
 from models.prompted_bert import PromptedBert
@@ -64,6 +64,29 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
                                                                          test_path=cfg.dataset.test_path, batch_size=cfg.dataset.batch_size,
                                                                          max_length=cfg.dataset.max_length, doc_stride=cfg.dataset.doc_stride)
 
+    if cfg.basic.with_soft_prompts is False:
+        # Initialize a mBERT model with a  2 linear layers on top
+        # To detect start and end positions of the answers
+        model = BertQA(cfg.model.name, device, cfg.basic.hidden_size).to(device)
+
+        # Initialize the optimizer
+        optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
+
+        # Initialize the linear scheduler for LR warmup
+        scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                    num_warmup_steps=cfg.scheduler.warmup_steps,
+                                                    num_training_steps=len(train_dataloader)*cfg.train.num_epochs)
+
+        print(f"\t Training mBERT on QA task without soft prompts with tokens of type {cfg.basic.token_type}")
+        # Train mBERT on extractive QA task
+        train_qa(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
+                  optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                  use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
+
+        # Evaluate the model
+        print("\t Training finished. Starting evaluation of mBERT on QA task.")
+        evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
+                     use_wandb=cfg.basic.use_wandb, tokenizer=tokenizer)
 
 
 def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):

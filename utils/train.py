@@ -1,6 +1,6 @@
 import torch
 import wandb
-from .metrics import get_accuracy
+from .metrics import get_accuracy, normalize_answer, compute_f1_score, compute_exact_match
 
 
 def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):
@@ -215,3 +215,223 @@ def evaluate_ner(model, val_dataloader, device, num_tokens=None, with_soft_promp
         print(f"\tAccuracy on validation: {acc}")
 
     return accuracies
+
+
+def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epochs, device, use_wandb=False):
+    """
+    Training function for extractive QA task using mBERT.
+    :param model: mBERT model for question answering
+    :param train_dataloader: DataLoader for training data
+    :param loss_func: loss function, e.g., CrossEntropyLoss
+    :param optimizer: optimizer, e.g., AdamW
+    :param scheduler: learning rate scheduler
+    :param num_epochs: number of epochs to train
+    :param device: device to train on (CPU/GPU)
+    :param use_wandb: whether to use wandb for logging
+    :return: trained model, list of losses, list of accuracies
+    """
+    # Initialize metrics
+    losses = []
+    accuracies = []
+
+    for epoch in range(num_epochs):
+        # Metrics to be logged into wandb
+        logging_dict = {}
+
+        print(f'Training epoch {epoch+1}/{num_epochs} started.')
+
+        loss_per_epoch = 0
+        total_correct_start = 0
+        total_correct_end = 0
+        total_correct_span = 0
+        total_examples = 0
+
+        # Set the model to train mode
+        model.train()
+
+        for idx, batch in enumerate(train_dataloader):
+            print(f'Training batch {idx+1} of {len(train_dataloader)}...')
+
+            # Move batch data to device
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            start_positions = batch["start_positions"].to(device)
+            end_positions = batch["end_positions"].to(device)
+
+            # Zero the parameter gradients
+            optimizer.zero_grad()
+
+            # Forward pass
+            outputs = model(input_seq=input_ids, attention_mask=attention_mask)
+
+            start_logits = outputs[0]
+            end_logits = outputs[1]
+
+            # Compute loss
+            loss_start = loss_func(start_logits, start_positions)
+            loss_end = loss_func(end_logits, end_positions)
+            batch_loss = (loss_start + loss_end) / 2
+
+            loss_per_epoch += batch_loss.detach().item()
+            losses.append(batch_loss.detach().item())
+
+            # Backward pass
+            batch_loss.backward()
+
+            # Clip gradients to prevent exploding gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+            # Update parameters
+            optimizer.step()
+            scheduler.step()
+
+            # Compute accuracies
+            with torch.no_grad():
+                pred_start_positions = torch.argmax(start_logits, dim=1)
+                pred_end_positions = torch.argmax(end_logits, dim=1)
+
+                correct_start = (pred_start_positions == start_positions).sum().item()
+                correct_end = (pred_end_positions == end_positions).sum().item()
+                correct_span = ((pred_start_positions == start_positions) & (pred_end_positions == end_positions)).sum().item()
+
+                total_correct_start += correct_start
+                total_correct_end += correct_end
+                total_correct_span += correct_span
+                total_examples += start_positions.size(0)
+
+        # Calculate epoch metrics
+        epoch_loss = loss_per_epoch / len(train_dataloader)
+        accuracy_start = 100.0 * total_correct_start / total_examples
+        accuracy_end = 100.0 * total_correct_end / total_examples
+        accuracy_span = 100.0 * total_correct_span / total_examples
+        accuracies.append(accuracy_span)
+
+        # Log metrics into wandb
+        logging_dict["loss"] = epoch_loss
+        logging_dict["accuracy_start"] = accuracy_start
+        logging_dict["accuracy_end"] = accuracy_end
+        logging_dict["accuracy_span"] = accuracy_span
+
+        if use_wandb:
+            wandb.log(logging_dict)
+
+        # Display additional information
+        print(f"\tEpoch: {epoch+1}")
+        print(f"Loss: {epoch_loss:.4f}   ---  Start Accuracy: {accuracy_start:.2f}%  End Accuracy: {accuracy_end:.2f}%  Span Accuracy: {accuracy_span:.2f}%")
+
+    return model, losses, accuracies
+
+
+def evaluate_qa(model, validation_dataloader, device, tokenizer, use_wandb=False):
+    """
+    Evaluate the model on the validation set and compute EM, F1 scores, and start/end/span accuracies, with logging to Wandb.
+    :param model: Trained mBERT model for question answering
+    :param validation_dataloader: DataLoader for validation data
+    :param device: Device to run evaluation on (CPU/GPU)
+    :param tokenizer: Tokenizer used to decode the tokens back to text
+    :param use_wandb: Whether to log metrics to Wandb
+    :return: EM score, F1 score, start accuracy, end accuracy, span accuracy
+    """
+    model.eval()
+    total_loss = 0
+    total_examples = 0
+
+    total_em = 0
+    total_f1 = 0
+
+    total_correct_start = 0
+    total_correct_end = 0
+    total_correct_span = 0
+
+    with torch.no_grad():
+        for batch in validation_dataloader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            start_positions = batch["start_positions"].to(device)
+            end_positions = batch["end_positions"].to(device)
+            contexts = batch["context"]  # Original context texts
+            answers = batch["answers"]   # Ground truth answers (list of acceptable answers)
+
+            outputs = model(input_seq=input_ids, attention_mask=attention_mask)
+            start_logits = outputs[0]
+            end_logits = outputs[1]
+
+            # Compute loss (optional, for monitoring)
+            loss_func = torch.nn.CrossEntropyLoss()
+            loss_start = loss_func(start_logits, start_positions)
+            loss_end = loss_func(end_logits, end_positions)
+            batch_loss = (loss_start + loss_end) / 2
+            total_loss += batch_loss.item()
+            batch_size = input_ids.size(0)
+            total_examples += batch_size
+
+            # Get predicted start and end positions
+            pred_start_positions = torch.argmax(start_logits, dim=1)
+            pred_end_positions = torch.argmax(end_logits, dim=1)
+
+            # Compute position accuracies
+            correct_start = (pred_start_positions == start_positions).sum().item()
+            correct_end = (pred_end_positions == end_positions).sum().item()
+            correct_span = ((pred_start_positions == start_positions) & (pred_end_positions == end_positions)).sum().item()
+
+            total_correct_start += correct_start
+            total_correct_end += correct_end
+            total_correct_span += correct_span
+
+            for i in range(batch_size):
+                # Extract predicted answer text
+                input_id = input_ids[i]
+                tokens = input_id.cpu().tolist()
+                pred_start = pred_start_positions[i].item()
+                pred_end = pred_end_positions[i].item()
+
+                # Adjust predictions if necessary
+                if pred_start > pred_end:
+                    pred_end = pred_start
+
+                # Ensure indices are within bounds
+                pred_start = max(0, min(pred_start, len(tokens) - 1))
+                pred_end = max(0, min(pred_end, len(tokens) - 1))
+
+                pred_answer_tokens = tokens[pred_start:pred_end + 1]
+                pred_answer = tokenizer.decode(pred_answer_tokens, skip_special_tokens=True)
+
+                # Get ground truth answer texts
+                ground_truth_answers = answers[i]  # List of acceptable answers
+
+                # Compute EM and F1 for this example
+                em_for_example = max(compute_exact_match(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
+                f1_for_example = max(compute_f1_score(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
+
+                total_em += em_for_example
+                total_f1 += f1_for_example
+
+    # Compute average accuracies
+    accuracy_start = 100.0 * total_correct_start / total_examples
+    accuracy_end = 100.0 * total_correct_end / total_examples
+    accuracy_span = 100.0 * total_correct_span / total_examples
+
+    # Compute average EM and F1 scores
+    em_score = 100.0 * total_em / total_examples
+    f1_score = 100.0 * total_f1 / total_examples
+
+    # Calculate average validation loss
+    avg_loss = total_loss / len(validation_dataloader)
+
+    # Log metrics to Wandb
+    if use_wandb:
+        wandb.log({
+            'Validation Loss': avg_loss,
+            'EM': em_score,
+            'F1': f1_score,
+            'Accuracy Start': accuracy_start,
+            'Accuracy End': accuracy_end,
+            'Accuracy Span': accuracy_span
+        })
+
+    # Display metrics
+    print(f"Validation Loss: {avg_loss:.4f} | EM: {em_score:.2f}% | F1: {f1_score:.2f}%")
+    print(f"Start Accuracy: {accuracy_start:.2f}% | End Accuracy: {accuracy_end:.2f}% | Span Accuracy: {accuracy_span:.2f}%")
+
+    return em_score, f1_score, accuracy_start, accuracy_end, accuracy_span
+
