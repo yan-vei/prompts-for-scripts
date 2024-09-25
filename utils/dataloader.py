@@ -112,10 +112,10 @@ def create_turkish_qa_dataloader(tokenizer, train_path, test_path, batch_size, m
     tr_tokenized_test = turkish_qa_test.map(
         lambda e: tokenize_and_align_turkish_qa(e, tokenizer=tokenizer, max_length=max_length, doc_stride=doc_stride),
         batched=True, batch_size=batch_size,
-        remove_columns=turkish_qa_test.column_names,)
-    tr_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'])
+        remove_columns=['question', 'id', 'context', 'title'])
+    tr_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions', 'answers'])
 
-    tr_train_dataloder = DataLoader(tr_tokenized_train, batch_size=batch_size)
+    tr_train_dataloader = DataLoader(tr_tokenized_train, batch_size=batch_size)
     tr_test_dataloader = DataLoader(tr_tokenized_test, batch_size=batch_size)
 
-    return tr_train_dataloder, tr_test_dataloader
+    return tr_train_dataloader, tr_test_dataloader, turkish_qa_test

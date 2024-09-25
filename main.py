@@ -60,7 +60,7 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
     """
 
     if cfg.basic.lang == 'TR':
-        train_dataloader, test_dataloader = create_turkish_qa_dataloader(tokenizer=tokenizer, train_path=cfg.dataset.train_path,
+        train_dataloader, test_dataloader, test_dataset = create_turkish_qa_dataloader(tokenizer=tokenizer, train_path=cfg.dataset.train_path,
                                                                          test_path=cfg.dataset.test_path, batch_size=cfg.dataset.batch_size,
                                                                          max_length=cfg.dataset.max_length, doc_stride=cfg.dataset.doc_stride)
 
@@ -79,13 +79,14 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
 
         print(f"\t Training mBERT on QA task without soft prompts with tokens of type {cfg.basic.token_type}")
         # Train mBERT on extractive QA task
-        train_qa(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
-                  optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
-                  use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
+        #train_qa(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
+           #       optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+           #       use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
 
         # Evaluate the model
         print("\t Training finished. Starting evaluation of mBERT on QA task.")
-        evaluate_qa(model=model, val_dataloader=test_dataloader, device=device,
+        evaluate_qa(model=model, val_dataloader=test_dataloader,
+                    device=device,
                      use_wandb=cfg.basic.use_wandb, tokenizer=tokenizer)
 
     # Training or evaluating soft prompts

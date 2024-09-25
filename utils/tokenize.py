@@ -49,34 +49,38 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
     tokenized_inputs["labels"] = labels
     return tokenized_inputs
 
-
 def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_stride=128):
 
     # Tokenize the contexts and questions
     tokenized_examples = tokenizer(
-            examples['question'],
-            examples['context'],
-            max_length=max_length,
-            truncation="only_second",
-            stride=doc_stride,
-            return_overflowing_tokens=True,
-            return_offsets_mapping=True,
-            padding="max_length",
-        )
+        examples['question'],
+        examples['context'],
+        max_length=max_length,
+        truncation=True,
+        stride=doc_stride,
+        return_overflowing_tokens=True,
+        return_offsets_mapping=True,
+        padding="max_length",
+    )
 
-    # Since one example might give us several features if it has a long context,
-    # we need a map from a feature to its corresponding example.
+    # Map from tokenized examples to original examples
     sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
     offset_mapping = tokenized_examples.pop("offset_mapping")
 
-    # Let's label those examples!
+    # Initialize lists for start and end positions
     start_positions = []
     end_positions = []
+
+    # Initialize list for answers
+    answers_list = []
 
     for i, offsets in enumerate(offset_mapping):
         # Get the example index corresponding to this feature
         sample_index = sample_mapping[i]
         answers = examples["answers"][sample_index]
+
+        # Append the answer to the answers_list
+        answers_list.append(answers)
 
         # Start/end character index of the answer in the text
         answer_start = answers["answer_start"][0]
@@ -90,7 +94,7 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
         while sequence_ids[idx] != 1:
             idx += 1
         context_start = idx
-        while sequence_ids[idx] == 1:
+        while idx < len(sequence_ids) and sequence_ids[idx] == 1:
             idx += 1
         context_end = idx - 1
 
@@ -113,7 +117,9 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
                 token_end_index -= 1
             end_positions.append(token_end_index + 1)
 
+    # Add the new fields to tokenized_examples
     tokenized_examples["start_positions"] = start_positions
     tokenized_examples["end_positions"] = end_positions
+    tokenized_examples["answers"] = answers_list
 
     return tokenized_examples

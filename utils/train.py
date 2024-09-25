@@ -348,14 +348,14 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
     total_correct_span = 0
 
     with torch.no_grad():
-        for batch in val_dataloader:
+        for idx, batch in enumerate(val_dataloader):
+            print(f"Evaluating batch {idx+1} of {len(val_dataloader)}...")
+
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             start_positions = batch["start_positions"].to(device)
             end_positions = batch["end_positions"].to(device)
-            contexts = batch["context"]  # Original context texts
-            answers = batch["answers"]   # Ground truth answers (list of acceptable answers)
-
+            answers = batch["answers"]["text"]  # Ground truth answers (list of acceptable answers)
             outputs = model(input_seq=input_ids, attention_mask=attention_mask)
             start_logits = outputs[0]
             end_logits = outputs[1]
@@ -382,6 +382,7 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
             total_correct_end += correct_end
             total_correct_span += correct_span
 
+
             for i in range(batch_size):
                 # Extract predicted answer text
                 input_id = input_ids[i]
@@ -401,7 +402,7 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
                 pred_answer = tokenizer.decode(pred_answer_tokens, skip_special_tokens=True)
 
                 # Get ground truth answer texts
-                ground_truth_answers = answers[i]  # List of acceptable answers
+                ground_truth_answers = answers[0][i]  # List of acceptable answers
 
                 # Compute EM and F1 for this example
                 em_for_example = max(compute_exact_match(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
