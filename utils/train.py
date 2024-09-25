@@ -326,7 +326,7 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
     return model, losses, accuracies
 
 
-def evaluate_qa(model, validation_dataloader, device, tokenizer, use_wandb=False):
+def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
     """
     Evaluate the model on the validation set and compute EM, F1 scores, and start/end/span accuracies, with logging to Wandb.
     :param model: Trained mBERT model for question answering
