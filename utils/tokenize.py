@@ -50,7 +50,7 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
     return tokenized_inputs
 
 
-def tokenize_and_align_turkish_qa(examples, token_type, tokenizer, max_length=384, doc_stride=128):
+def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_stride=128):
 
     # Tokenize the contexts and questions
     tokenized_examples = tokenizer(
