@@ -3,19 +3,19 @@ basic:
   with_soft_prompts: False
   wandb_run: Null
   padding_token: -100
-  lang: TR
-  task: QA
+  lang: KZ
+  task: NER
   hidden_size: 768
   token_type: tokens
   num_orig_ner_labels: 39
 defaults:
   - _self_
-  - model: mbert
-  - tokenizer: mbert
+  - model: turkbert
+  - tokenizer: turkbert
   - soft_prompts: defaults
   - train: defaults
   - optimizer: adamw
-  - dataset: thquad
+  - dataset: kaznerd
   - scheduler: defaults
   - loss: ce
 hydra:

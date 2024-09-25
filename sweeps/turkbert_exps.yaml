@@ -1,0 +1,25 @@
+program: main.py
+name: turkbert-exps
+method: grid
+parameters:
+  dataset:
+    values: [kaznerd]
+  train.num_epochs:
+    values: [8, 10]
+  basic.task:
+    values: [NER]
+  basic.lang:
+    values: [KZ]
+  basic.token_type:
+    values: ['tokens', 'latinized_tokens']
+  basic.with_soft_prompts:
+    values: [False]
+  optimizer.lr:
+    values: [0.0001]
+  optimizer.weight_decay:
+    values: [0.001]
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}
