@@ -79,9 +79,9 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
 
         print(f"\t Training mBERT on QA task without soft prompts with tokens of type {cfg.basic.token_type}")
         # Train mBERT on extractive QA task
-        #train_qa(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
-           #       optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
-           #       use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
+        train_qa(model=model, train_dataloader=train_dataloader, loss_func=lossfn,
+                  optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                  use_wandb=cfg.basic.use_wandb, scheduler=scheduler)
 
         # Evaluate the model
         print("\t Training finished. Starting evaluation of mBERT on QA task.")
