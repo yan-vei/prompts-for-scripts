@@ -431,8 +431,8 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
         })
 
     # Display metrics
-    print(f"Validation Loss: {avg_loss:.4f} | EM: {em_score:.2f}% | F1: {f1_score:.2f}%")
+    print(f"Validation Loss: {avg_loss:.4f} | EM: {em_score:.2f}% ")
     print(f"Start Accuracy: {accuracy_start:.2f}% | End Accuracy: {accuracy_end:.2f}% | Span Accuracy: {accuracy_span:.2f}%")
 
-    return em_score, f1_score, accuracy_start, accuracy_end, accuracy_span
+    return em_score, accuracy_start, accuracy_end, accuracy_span
 
