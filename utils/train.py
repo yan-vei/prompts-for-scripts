@@ -406,10 +406,8 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
 
                 # Compute EM and F1 for this example
                 em_for_example = max(compute_exact_match(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
-                f1_for_example = max(compute_f1_score(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
 
                 total_em += em_for_example
-                total_f1 += f1_for_example
 
     # Compute average accuracies
     accuracy_start = 100.0 * total_correct_start / total_examples
@@ -418,7 +416,6 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
 
     # Compute average EM and F1 scores
     em_score = 100.0 * total_em / total_examples
-    f1_score = 100.0 * total_f1 / total_examples
 
     # Calculate average validation loss
     avg_loss = total_loss / len(val_dataloader)
@@ -428,7 +425,6 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
         wandb.log({
             'Validation Loss': avg_loss,
             'EM': em_score,
-            'F1': f1_score,
             'Accuracy Start': accuracy_start,
             'Accuracy End': accuracy_end,
             'Accuracy Span': accuracy_span
