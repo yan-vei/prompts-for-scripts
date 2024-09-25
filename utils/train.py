@@ -348,7 +348,7 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
     total_correct_span = 0
 
     with torch.no_grad():
-        for batch in validation_dataloader:
+        for batch in val_dataloader:
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             start_positions = batch["start_positions"].to(device)
@@ -420,7 +420,7 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
     f1_score = 100.0 * total_f1 / total_examples
 
     # Calculate average validation loss
-    avg_loss = total_loss / len(validation_dataloader)
+    avg_loss = total_loss / len(val_dataloader)
 
     # Log metrics to Wandb
     if use_wandb:
