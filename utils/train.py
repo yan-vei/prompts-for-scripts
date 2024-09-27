@@ -330,18 +330,17 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
     """
     Evaluate the model on the validation set and compute EM, F1 scores, and start/end/span accuracies, with logging to Wandb.
     :param model: Trained mBERT model for question answering
-    :param validation_dataloader: DataLoader for validation data
+    :param val_dataloader: DataLoader for validation data
     :param device: Device to run evaluation on (CPU/GPU)
     :param tokenizer: Tokenizer used to decode the tokens back to text
     :param use_wandb: Whether to log metrics to Wandb
-    :return: EM score, F1 score, start accuracy, end accuracy, span accuracy
+    :return: EM score, start accuracy, end accuracy, span accuracy
     """
     model.eval()
     total_loss = 0
     total_examples = 0
 
     total_em = 0
-    total_f1 = 0
 
     total_correct_start = 0
     total_correct_end = 0
