@@ -83,8 +83,8 @@ def train_qa_with_soft_prompts(model, tokenizer, train_dataloader, test_dataload
             eval_epoch_loss = eval_loss / len(test_dataloader)
             train_epoch_loss = loss_per_epoch / len(train_dataloader)
 
-    # Log metrics
-    print(f"{epoch=}: {train_epoch_loss=} {eval_epoch_loss=}")
+        # Log metrics
+        print(f"{epoch=}: {train_epoch_loss=} {eval_epoch_loss=}")
 
 
 def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):
