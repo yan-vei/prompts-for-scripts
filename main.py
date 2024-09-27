@@ -3,7 +3,7 @@ import wandb
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from transformers import AutoModelForTokenClassification, AutoModelForQuestionAnswering, AutoTokenizer, get_linear_schedule_with_warmup
-from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader, create_turkish_qa_dataloader
+from utils.dataloader import create_kaznerd_dataloader, create_turkish_ner_dataloader, create_turkish_qa_dataloader, create_kazakh_qa_dataloader
 from logging_config import settings
 from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_qa, train_qa_with_soft_prompts, evaluate_qa
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
@@ -60,7 +60,11 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
     """
 
     if cfg.basic.lang == 'TR':
-        train_dataloader, test_dataloader, test_dataset = create_turkish_qa_dataloader(tokenizer=tokenizer, train_path=cfg.dataset.train_path,
+        train_dataloader, test_dataloader = create_turkish_qa_dataloader(tokenizer=tokenizer, train_path=cfg.dataset.train_path,
+                                                                         test_path=cfg.dataset.test_path, batch_size=cfg.dataset.batch_size,
+                                                                         max_length=cfg.dataset.max_length, doc_stride=cfg.dataset.doc_stride)
+    elif cfg.basic.lang == 'KZ':
+        train_dataloader, test_dataloader = create_kazakh_qa_dataloader(tokenizer=tokenizer, train_path=cfg.dataset.train_path,
                                                                          test_path=cfg.dataset.test_path, batch_size=cfg.dataset.batch_size,
                                                                          max_length=cfg.dataset.max_length, doc_stride=cfg.dataset.doc_stride)
 

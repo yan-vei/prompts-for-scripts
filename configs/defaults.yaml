@@ -1,9 +1,9 @@
 basic:
   use_wandb: False
-  with_soft_prompts: True
+  with_soft_prompts: False
   wandb_run: Null
   padding_token: -100
-  lang: TR
+  lang: KZ
   task: QA
   hidden_size: 768
   token_type: tokens
@@ -15,7 +15,7 @@ defaults:
   - soft_prompts: defaults
   - train: defaults
   - optimizer: adamw
-  - dataset: thquad
+  - dataset: kazqad
   - scheduler: defaults
   - loss: ce
 hydra:

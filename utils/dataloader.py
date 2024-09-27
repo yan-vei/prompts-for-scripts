@@ -1,6 +1,6 @@
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
-from .tokenize import tokenize_and_align_labels_ner, tokenize_and_align_turkish_qa
+from .tokenize import tokenize_and_align_labels_ner, tokenize_and_align_turkish_qa, tokenize_and_align_kazakh_qa
 
 
 def create_turkish_ner_dataloader(tokenizer, token_type, train_path, test_path, padding_token, batch_size):
@@ -118,4 +118,42 @@ def create_turkish_qa_dataloader(tokenizer, train_path, test_path, batch_size, m
     tr_train_dataloader = DataLoader(tr_tokenized_train, batch_size=batch_size)
     tr_test_dataloader = DataLoader(tr_tokenized_test, batch_size=batch_size)
 
-    return tr_train_dataloader, tr_test_dataloader, turkish_qa_test
+    return tr_train_dataloader, tr_test_dataloader
+
+
+def create_kazakh_qa_dataloader(tokenizer, train_path, test_path, batch_size, token_type="tokens", max_length=384, doc_stride=128):
+    """
+    Load and tokenize the TurkishNER dataset
+    :param tokenizer: tokenizer object
+    :param train_path: path to train dataset
+    :param test_path: path to test dataset
+    :param max_length: maximum length of sequence
+    :param doc_stride: document stride
+    :param batch_size: specified in config
+    :return: train dataloader, test dataloader, num classes
+    """
+
+    kazakh_qa_train = load_from_disk(train_path)
+    kazakh_qa_test = load_from_disk(test_path)
+
+    print(batch_size)
+
+    # Tokenize and create dataloaders for Turkish QA dataset
+    kz_tokenized_train = kazakh_qa_train.map(
+        lambda e: tokenize_and_align_kazakh_qa(e, tokenizer=tokenizer, max_length=max_length, doc_stride=doc_stride, token_type=token_type),
+        batched=True, batch_size=batch_size,
+        remove_columns=kazakh_qa_train.column_names,
+    )
+    kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'])
+
+    kz_tokenized_test = kazakh_qa_test.map(
+        lambda examples: tokenize_and_align_kazakh_qa(examples, tokenizer, token_type=token_type),
+        batched=True, batch_size=batch_size,
+        remove_columns=kazakh_qa_test.column_names
+    )
+    kz_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions', 'answers'])
+
+    kz_train_dataloader = DataLoader(kz_tokenized_train, batch_size=batch_size)
+    kz_test_dataloader = DataLoader(kz_tokenized_test, batch_size=batch_size)
+
+    return kz_train_dataloader, kz_test_dataloader
