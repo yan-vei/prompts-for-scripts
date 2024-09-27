@@ -406,7 +406,7 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
     return model, losses, accuracies
 
 
-def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
+def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=False, num_tokens=None, use_wandb=False):
     """
     Evaluate the model on the validation set and compute EM, F1 scores, and start/end/span accuracies, with logging to Wandb.
     :param model: Trained mBERT model for question answering
@@ -435,6 +435,12 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
             start_positions = batch["start_positions"].to(device)
             end_positions = batch["end_positions"].to(device)
             answers = batch["answers"]["text"]  # Ground truth answers (list of acceptable answers)
+
+            if with_soft_prompts and num_tokens is not None:
+                # Adjust start_positions and end_positions
+                start_positions = start_positions + num_tokens
+                end_positions = end_positions + num_tokens
+
             outputs = model(input_seq=input_ids, attention_mask=attention_mask)
             start_logits = outputs[0]
             end_logits = outputs[1]
@@ -466,8 +472,14 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, use_wandb=False):
                 # Extract predicted answer text
                 input_id = input_ids[i]
                 tokens = input_id.cpu().tolist()
-                pred_start = pred_start_positions[i].item()
-                pred_end = pred_end_positions[i].item()
+
+                if with_soft_prompts and num_tokens is not None:
+                    tokens = tokens[num_tokens:]  # Exclude soft prompt tokens
+                    pred_start = pred_start_positions[i].item() - num_tokens
+                    pred_end = pred_end_positions[i].item() - num_tokens
+                else:
+                    pred_start = pred_start_positions[i].item()
+                    pred_end = pred_end_positions[i].item()
 
                 # Adjust predictions if necessary
                 if pred_start > pred_end:
