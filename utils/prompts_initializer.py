@@ -13,6 +13,9 @@ def initialize_randomly(num_tokens, task, model):
     if task == 'NER':
         peft_config = PromptTuningConfig(num_virtual_tokens=num_tokens, task_type=TaskType.TOKEN_CLS)
 
+    elif task == 'QA':
+        peft_config = PromptTuningConfig(num_virtual_tokens=num_tokens, task_type=TaskType.QUESTION_ANS)
+
     return get_peft_model(model, peft_config)
 
 
@@ -29,6 +32,10 @@ def initialize_with_task(num_tokens, task, model, tokenizer):
     if task == 'NER':
         init_tokens = ['entity', 'label', 'tag', 'identify', 'recognize']
         task_type = TaskType.TOKEN_CLS
+
+    elif task == 'QA':
+        init_tokens = ['question', 'answer', 'context', 'start', 'end']
+        task_type = TaskType.QUESTION_ANS
 
     peft_config = PromptTuningConfig(
         num_virtual_tokens=num_tokens,
@@ -57,6 +64,12 @@ def initialize_normal(num_tokens, hidden_size, task, model):
         peft_config = PromptTuningConfig(
             num_virtual_tokens=num_tokens,
             task_type=TaskType.TOKEN_CLS
+        )
+
+    elif task == 'QA':
+        peft_config = PromptTuningConfig(
+            num_virtual_tokens=num_tokens,
+            task_type=TaskType.QUESTION_ANS
         )
 
     peft_model = get_peft_model(model, peft_config)

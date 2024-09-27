@@ -1,5 +1,5 @@
 import torch
-from transformers import BertModel, BertForTokenClassification
+from transformers import BertModel, BertForTokenClassification, BertForQuestionAnswering
 from peft import PeftModel
 
 

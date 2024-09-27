@@ -3,8 +3,84 @@ import wandb
 from .metrics import get_accuracy, normalize_answer, compute_f1_score, compute_exact_match
 
 
-def train_qa_with_soft_prompts():
-    pass
+def train_qa_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):
+    """
+    Train soft prompts on Turkish for extractive QA.
+    :param model: mBERT
+    :param tokenizer: mBERT tokenizer
+    :param train_dataloader: train data
+    :param test_dataloader: test data
+    :param optimizer: e.g., AdamW
+    :param num_epochs: int, specified in the configuration
+    :param device: CPU/GPU/MPS
+    :param num_tokens: number of soft prompt tokens
+    :return: void
+    """
+    for epoch in range(num_epochs):
+        print(f'Training epoch {epoch + 1}/{num_epochs} started.')
+
+        # Set model to training mode
+        model.train()
+
+        loss_per_epoch = 0
+
+        for idx, batch in enumerate(train_dataloader):
+            print(f'Training batch {idx+1} of {len(train_dataloader)}...')
+
+            # Move tensors to the appropriate device
+            batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Adjust start_positions and end_positions by num_tokens
+            batch['start_positions'] = batch['start_positions'] + num_tokens
+            batch['end_positions'] = batch['end_positions'] + num_tokens
+
+            # Ensure positions do not exceed sequence length
+            max_len = batch['input_ids'].size(1)
+            batch['start_positions'] = torch.clamp(batch['start_positions'], max=max_len - 1)
+            batch['end_positions'] = torch.clamp(batch['end_positions'], max=max_len - 1)
+
+            # Forward pass and loss computation
+            outputs = model(**batch)
+            loss = outputs.loss
+            loss_per_epoch += loss.detach().float()
+
+            # Backpropagation
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+        # Evaluate model performance per epoch
+        model.eval()
+        eval_loss = 0
+
+        for batch in test_dataloader:
+            # Move tensors to the appropriate device
+            batch = {k: v.to(device) for k, v in batch.items()}
+
+            # Adjust start_positions and end_positions
+            batch['start_positions'] = batch['start_positions'] + num_tokens
+            batch['end_positions'] = batch['end_positions'] + num_tokens
+
+            # Ensure positions do not exceed sequence length
+            max_len = batch['input_ids'].size(1)
+            batch['start_positions'] = torch.clamp(batch['start_positions'], max=max_len - 1)
+            batch['end_positions'] = torch.clamp(batch['end_positions'], max=max_len - 1)
+
+            # No gradient computation during evaluation
+            with torch.no_grad():
+                outputs = model(**batch)
+
+            # Accumulate evaluation loss
+            loss = outputs.loss
+            eval_loss += loss.detach().float()
+
+        # Calculate average losses
+        eval_epoch_loss = eval_loss / len(test_dataloader)
+        train_epoch_loss = loss_per_epoch / len(train_dataloader)
+
+        # Log metrics
+        print(f"{epoch=}: {train_epoch_loss=} {eval_epoch_loss=}")
+
 
 
 def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):

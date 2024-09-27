@@ -120,6 +120,11 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
                                     optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
                                     num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
+        # Save the trained model
+        print("\t Soft prompts trained. Saving model...")
+        model.save_pretrained("soft_prompts/qa/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
+            cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+                              )
 
 def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
     """

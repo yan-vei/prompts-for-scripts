@@ -1,0 +1,31 @@
+program: main.py
+name: soft-prompts-qa
+method: grid
+parameters:
+  dataset:
+    values: [thquad]
+  train.num_epochs:
+    values: [15, 30, 50]
+  basic.task:
+    values: [QA]
+  basic.lang:
+    values: [TR]
+  basic.token_type:
+    values: ['tokens']
+  basic.with_soft_prompts:
+    values: [True]
+  soft_prompts.num_virtual_tokens:
+    values: [1, 20, 50, 100, 150]
+  soft_prompts.evaluate:
+    values: [False]
+  soft_prompts.init_strategy:
+    values: ['random', 'task', 'normal']
+  optimizer.lr:
+    values: [0.0001]
+  optimizer.weight_decay:
+    values: [0.001]
+command:
+  - ${env}
+  - python
+  - ${program}
+  - ${args_no_hyphens}
