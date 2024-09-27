@@ -8,7 +8,7 @@ from logging_config import settings
 from utils.train import train_ner, evaluate_ner, train_ner_with_soft_prompts, train_qa, train_qa_with_soft_prompts, evaluate_qa
 from utils.prompts_initializer import initialize_randomly, initialize_with_task, initialize_normal
 from models.base_bert import BertNerd, BertQA
-from models.prompted_bert import PromptedBert
+from models.prompted_bert import PromptedBertNER, PromptedBertQA
 
 
 @hydra.main(config_path='configs', config_name='defaults', version_base=None)
@@ -92,38 +92,69 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
     # Training or evaluating soft prompts
     elif cfg.basic.with_soft_prompts is True:
 
-        # Initialize the mBERT model
-        model = AutoModelForQuestionAnswering.from_pretrained(cfg.model.name)
+        if cfg.soft_prompts.evaluate is True:
 
-        # Initialize prompts according to the declared strategy
-        if cfg.soft_prompts.init_strategy == 'random':
-            model = initialize_randomly(cfg.soft_prompts.num_virtual_tokens,
-                                        cfg.basic.task, model)
-        elif cfg.soft_prompts.init_strategy == 'task':
-            model = initialize_with_task(cfg.soft_prompts.num_virtual_tokens,
-                                         cfg.basic.task, model, cfg.tokenizer.name)
-        elif cfg.soft_prompts.init_strategy == 'normal':
-            model = initialize_normal(cfg.soft_prompts.num_virtual_tokens, cfg.basic.hidden_size,
-                                      cfg.basic.task, model)
+            soft_prompts_path = ("soft_prompts/qa/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" +
+                                 str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs))
+            print(f'Loading soft prompts from {soft_prompts_path}...')
 
-        model.to(device)
+            # Initialize the model with prompts
+            model = PromptedBertQA(name=cfg.model.name, device=device, hidden_size=cfg.basic.hidden_size,
+                                    soft_prompts_path=soft_prompts_path).to(device)
 
-        # Check that the soft prompts have been correctly initialized
-        model.print_trainable_parameters()
+            # Initialize the optimizer
+            optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
 
-        # Initialize the optimizer
-        optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
+            # Initialize the linear scheduler for LR warmup
+            scheduler = get_linear_schedule_with_warmup(optimizer,
+                                                        num_warmup_steps=cfg.scheduler.warmup_steps,
+                                                        num_training_steps=len(train_dataloader) * cfg.train.num_epochs)
 
-        print("\t Training mBERT on QA task with soft prompts.")
-        train_qa_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader,
-                                    test_dataloader=test_dataloader,
-                                    optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
-                                    num_tokens=cfg.soft_prompts.num_virtual_tokens)
+            # Train model
+            print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
+            train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True,
+                      num_tokens=cfg.soft_prompts.num_virtual_tokens, optimizer=optimizer,
+                      num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=cfg.basic.use_wandb)
 
-        # Save the trained model
-        print("\t Soft prompts trained. Saving model...")
-        model.save_pretrained("soft_prompts/qa/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
-            cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
+            # Evaluate the model
+            print("\t Training finished. Starting evaluation of mBERT on NER task.")
+            evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
+                         use_wandb=cfg.basic.use_wandb, with_soft_prompts=True,
+                         num_tokens=cfg.soft_prompts.num_virtual_tokens)
+
+        else:
+            # Initialize the mBERT model
+            model = AutoModelForQuestionAnswering.from_pretrained(cfg.model.name)
+
+            # Initialize prompts according to the declared strategy
+            if cfg.soft_prompts.init_strategy == 'random':
+                model = initialize_randomly(cfg.soft_prompts.num_virtual_tokens,
+                                            cfg.basic.task, model)
+            elif cfg.soft_prompts.init_strategy == 'task':
+                model = initialize_with_task(cfg.soft_prompts.num_virtual_tokens,
+                                             cfg.basic.task, model, cfg.tokenizer.name)
+            elif cfg.soft_prompts.init_strategy == 'normal':
+                model = initialize_normal(cfg.soft_prompts.num_virtual_tokens, cfg.basic.hidden_size,
+                                          cfg.basic.task, model)
+
+            model.to(device)
+
+            # Check that the soft prompts have been correctly initialized
+            model.print_trainable_parameters()
+
+            # Initialize the optimizer
+            optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
+
+            print("\t Training mBERT on QA task with soft prompts.")
+            train_qa_with_soft_prompts(model=model, tokenizer=tokenizer, train_dataloader=train_dataloader,
+                                        test_dataloader=test_dataloader,
+                                        optimizer=optimizer, num_epochs=cfg.train.num_epochs, device=device,
+                                        num_tokens=cfg.soft_prompts.num_virtual_tokens)
+
+            # Save the trained model
+            print("\t Soft prompts trained. Saving model...")
+            model.save_pretrained("soft_prompts/qa/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" + str(
+                cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs)
                               )
 
 def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
@@ -182,9 +213,9 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
             print(f'Loading soft prompts from {soft_prompts_path}...')
 
             # Initialize the model with prompts
-            model = PromptedBert(name=cfg.model.name, device=device, hidden_size=cfg.basic.hidden_size,
-                                 num_classes=num_classes, soft_prompts_path=soft_prompts_path,
-                                 num_orig_ner_labels=cfg.basic.num_orig_ner_labels).to(device)
+            model = PromptedBertNER(name=cfg.model.name, device=device, hidden_size=cfg.basic.hidden_size,
+                                    num_classes=num_classes, soft_prompts_path=soft_prompts_path,
+                                    num_orig_ner_labels=cfg.basic.num_orig_ner_labels).to(device)
 
             # Initialize the optimizer
             optimizer = hydra.utils.instantiate(cfg.optimizer, params=model.parameters())
