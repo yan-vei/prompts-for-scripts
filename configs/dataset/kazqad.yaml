@@ -1,4 +1,4 @@
-name: kaznerd
+name: kazqad
 train_path: datasets/kazqad-train.hf
 test_path: datasets/kazqad-test.hf
 batch_size: 16
