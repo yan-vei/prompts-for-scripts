@@ -152,7 +152,7 @@ def create_kazakh_qa_dataloader(tokenizer, train_path, test_path, batch_size, to
     )
     kz_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'], output_all_columns=True)
 
-    kz_train_dataloader = DataLoader(kz_tokenized_train, shuffle=False, drop_last=True, batch_size=batch_size, collate_fn=custom_collate_fn)
+    kz_train_dataloader = DataLoader(kz_tokenized_train, shuffle=False, drop_last=True, batch_size=batch_size)
     kz_test_dataloader = DataLoader(kz_tokenized_test, shuffle=False, drop_last=True, batch_size=batch_size, collate_fn=custom_collate_fn)
 
     return kz_train_dataloader, kz_test_dataloader
