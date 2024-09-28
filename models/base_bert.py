@@ -48,7 +48,7 @@ class BertQA(torch.nn.Module):
         mBERT-based model for extractive QA in Kazakh and Turkish languages.
     """
 
-    def __init__(self, name, device, hidden_size, freeze=True):
+    def __init__(self, name, device, hidden_size, freeze=False):
         super(BertQA, self).__init__()
         self.device = device
         self.mbert = BertModel.from_pretrained(name)
