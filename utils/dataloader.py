@@ -1,4 +1,5 @@
 from datasets import load_from_disk
+import torch
 from torch.utils.data import DataLoader
 from .tokenize import tokenize_and_align_labels_ner, tokenize_and_align_turkish_qa, tokenize_and_align_kazakh_qa
 
@@ -136,24 +137,33 @@ def create_kazakh_qa_dataloader(tokenizer, train_path, test_path, batch_size, to
     kazakh_qa_train = load_from_disk(train_path)
     kazakh_qa_test = load_from_disk(test_path)
 
-    print(batch_size)
-
     # Tokenize and create dataloaders for Turkish QA dataset
     kz_tokenized_train = kazakh_qa_train.map(
         lambda e: tokenize_and_align_kazakh_qa(e, tokenizer=tokenizer, max_length=max_length, doc_stride=doc_stride, token_type=token_type),
-        batched=True, batch_size=batch_size,
+        batched=True,
         remove_columns=kazakh_qa_train.column_names,
     )
     kz_tokenized_train.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'])
 
     kz_tokenized_test = kazakh_qa_test.map(
         lambda examples: tokenize_and_align_kazakh_qa(examples, tokenizer, token_type=token_type),
-        batched=True, batch_size=batch_size,
+        batched=True,
         remove_columns=kazakh_qa_test.column_names
     )
-    kz_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions', 'answers'])
+    kz_tokenized_test.set_format(type='torch', columns=['input_ids', 'attention_mask', 'start_positions', 'end_positions'], output_all_columns=True)
 
-    kz_train_dataloader = DataLoader(kz_tokenized_train, batch_size=batch_size)
-    kz_test_dataloader = DataLoader(kz_tokenized_test, batch_size=batch_size)
+    kz_train_dataloader = DataLoader(kz_tokenized_train, shuffle=False, drop_last=True, batch_size=batch_size, collate_fn=custom_collate_fn)
+    kz_test_dataloader = DataLoader(kz_tokenized_test, shuffle=False, drop_last=True, batch_size=batch_size, collate_fn=custom_collate_fn)
 
     return kz_train_dataloader, kz_test_dataloader
+
+
+def custom_collate_fn(batch):
+    # Stack tensor fields
+    tensor_keys = ['input_ids', 'attention_mask', 'start_positions', 'end_positions']
+    batch_tensors = {key: torch.stack([item[key] for item in batch]) for key in tensor_keys}
+
+    # Keep 'answers' as a list
+    batch_tensors['answers'] = [item['answers'] for item in batch]
+
+    return batch_tensors

@@ -126,7 +126,7 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
     return tokenized_examples
 
 
-def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=384, doc_stride=128, token_type='tokens'):
+def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=512, doc_stride=128, token_type='tokens'):
     # Select the appropriate keys based on token_type
     if token_type == 'latinized':
         question_key = 'latinized_question'

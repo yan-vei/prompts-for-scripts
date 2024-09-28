@@ -406,7 +406,7 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
     return model, losses, accuracies
 
 
-def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=False, num_tokens=None, use_wandb=False):
+def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=False, num_tokens=None, use_wandb=False, lang='KZ'):
     """
     Evaluate the model on the validation set and compute EM, F1 scores, and start/end/span accuracies, with logging to Wandb.
     :param model: Trained mBERT model for question answering
@@ -434,7 +434,11 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
             attention_mask = batch["attention_mask"].to(device)
             start_positions = batch["start_positions"].to(device)
             end_positions = batch["end_positions"].to(device)
-            answers = batch["answers"]["text"]  # Ground truth answers (list of acceptable answers)
+
+            if lang == 'KZ':
+                answers = batch["answers"]  # Ground truth answers (list of acceptable answers)
+            else:
+                answers = batch["answers"]["text"]
 
             if with_soft_prompts and num_tokens is not None:
                 # Adjust start_positions and end_positions
@@ -493,7 +497,10 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
                 pred_answer = tokenizer.decode(pred_answer_tokens, skip_special_tokens=True)
 
                 # Get ground truth answer texts
-                ground_truth_answers = answers[0][i]  # List of acceptable answers
+                if lang == 'KZ':
+                    ground_truth_answers = answers[i][0]  # List of acceptable answers
+                else:
+                    ground_truth_answers = answers[0][i]
 
                 # Compute EM and F1 for this example
                 em_for_example = max(compute_exact_match(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
