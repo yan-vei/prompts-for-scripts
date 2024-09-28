@@ -1,5 +1,5 @@
 program: main.py
-name: soft-prompts-qa
+name: soft-prompts-qa-p1
 method: grid
 parameters:
   dataset:
@@ -15,7 +15,7 @@ parameters:
   basic.with_soft_prompts:
     values: [True]
   soft_prompts.num_virtual_tokens:
-    values: [1, 20, 50, 100, 150]
+    values: [1, 20, 50]
   soft_prompts.evaluate:
     values: [False]
   soft_prompts.init_strategy:
