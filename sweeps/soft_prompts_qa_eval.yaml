@@ -1,13 +1,13 @@
 program: main.py
-name: soft-prompts-ner-eval
+name: soft-prompts-qa-eval
 method: grid
 parameters:
   dataset:
-    values: [kaznerd]
+    values: [kazqad]
   train.num_epochs:
-    values: [8, 10]
+    values: [8]
   basic.task:
-    values: [NER]
+    values: [QA]
   basic.use_wandb:
     values: [True]
   basic.token_type:
@@ -17,15 +17,15 @@ parameters:
   basic.with_soft_prompts:
     values: [True]
   soft_prompts.num_virtual_tokens:
-    values: [1, 5, 10, 20, 50]
+    values: [1, 20, 50, 100, 150]
   soft_prompts.evaluate:
     values: [True]
   soft_prompts.init_strategy:
-    values: ['random', 'normal', 'task']
+    values: ['random', 'task']
   optimizer.lr:
-    values: [0.0001, 0.00001]
+    values: [0.0001]
   optimizer.weight_decay:
-    values: [0.001, 0.0001]
+    values: [0.001]
 command:
   - ${env}
   - python
