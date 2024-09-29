@@ -1,17 +1,17 @@
 basic:
-  use_wandb: True
-  with_soft_prompts: False
+  use_wandb: False
+  with_soft_prompts: True
   wandb_run: Null
   padding_token: -100
   lang: KZ
   task: QA
   hidden_size: 768
-  token_type: latinized_tokens
+  token_type: tokens
   num_orig_ner_labels: 39
 defaults:
   - _self_
-  - model: turkbert
-  - tokenizer: turkbert
+  - model: mbert
+  - tokenizer: mbert
   - soft_prompts: defaults
   - train: defaults
   - optimizer: adamw

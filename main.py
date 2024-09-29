@@ -99,7 +99,7 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
         if cfg.soft_prompts.evaluate is True:
 
             soft_prompts_path = ("soft_prompts/qa/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" +
-                                 str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs))
+                                 str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.soft_prompts.num_trained_epochs))
             print(f'Loading soft prompts from {soft_prompts_path}...')
 
             # Initialize the model with prompts
@@ -116,13 +116,13 @@ def run_qa_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
 
             # Train model
             print(f"\t Training mBERT on NER task with soft prompts with tokens of type {cfg.basic.token_type}")
-            train_ner(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True,
+            train_qa(model=model, train_dataloader=train_dataloader, loss_func=lossfn, with_soft_prompts=True,
                       num_tokens=cfg.soft_prompts.num_virtual_tokens, optimizer=optimizer,
                       num_epochs=cfg.train.num_epochs, device=device, scheduler=scheduler, use_wandb=cfg.basic.use_wandb)
 
             # Evaluate the model
             print("\t Training finished. Starting evaluation of mBERT on NER task.")
-            evaluate_ner(model=model, val_dataloader=test_dataloader, device=device,
+            evaluate_qa(model=model, val_dataloader=test_dataloader, device=device,
                          use_wandb=cfg.basic.use_wandb, with_soft_prompts=True,
                          num_tokens=cfg.soft_prompts.num_virtual_tokens)
 
@@ -213,7 +213,7 @@ def run_ner_pipeline(cfg: DictConfig, lossfn, device, tokenizer):
         if cfg.soft_prompts.evaluate is True:
 
             soft_prompts_path = ("soft_prompts/ner/" + str(cfg.soft_prompts.num_virtual_tokens) + "/" +
-                                 str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.train.num_epochs))
+                                 str(cfg.soft_prompts.init_strategy) + "/" + str(cfg.soft_prompts.num_trained_epochs))
             print(f'Loading soft prompts from {soft_prompts_path}...')
 
             # Initialize the model with prompts

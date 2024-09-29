@@ -301,7 +301,8 @@ def evaluate_ner(model, val_dataloader, device, num_tokens=None, with_soft_promp
     return accuracies
 
 
-def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epochs, device, use_wandb=False):
+def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epochs, device, use_wandb=False,
+             with_soft_prompts=False, num_tokens=None):
     """
     Training function for extractive QA task using mBERT.
     :param model: mBERT model for question answering
@@ -341,6 +342,11 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
             attention_mask = batch["attention_mask"].to(device)
             start_positions = batch["start_positions"].to(device)
             end_positions = batch["end_positions"].to(device)
+
+            if with_soft_prompts and num_tokens is not None:
+                # Adjust start_positions and end_positions
+                start_positions = start_positions + num_tokens
+                end_positions = end_positions + num_tokens
 
             # Zero the parameter gradients
             optimizer.zero_grad()
