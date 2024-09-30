@@ -5,7 +5,7 @@ parameters:
   dataset:
     values: [thquad]
   train.num_epochs:
-    values: [15, 30, 50]
+    values: [30, 50]
   basic.task:
     values: [QA]
   basic.lang:
@@ -15,11 +15,11 @@ parameters:
   basic.with_soft_prompts:
     values: [True]
   soft_prompts.num_virtual_tokens:
-    values: [1, 20, 50]
+    values: [20, 50]
   soft_prompts.evaluate:
     values: [False]
   soft_prompts.init_strategy:
-    values: ['random', 'task', 'normal']
+    values: ['task', 'normal']
   optimizer.lr:
     values: [0.0001]
   optimizer.weight_decay:
