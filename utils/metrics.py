@@ -3,7 +3,10 @@ import string
 
 
 def normalize_answer(s):
-    """Lower text and remove punctuation, articles, and extra whitespace."""
+    """
+    Se of functions to lower text and remove punctuation, articles, and extra whitespace.
+    """
+
     def lower(text):
         return text.lower()
 
@@ -19,25 +22,14 @@ def normalize_answer(s):
     return white_space_fix(remove_articles(remove_punctuation(lower(s))))
 
 def compute_exact_match(prediction, ground_truth):
-    """Compute the Exact Match score between the prediction and ground truth."""
+    """
+    Compute the Exact Match score between the prediction and ground truth answers.
+    :param prediction: prediction answer from the span
+    :param ground_truth: ground truth answer from the span
+    :return: Exact Match score - accuracy in %
+    """
     return int(normalize_answer(prediction) == normalize_answer(ground_truth))
 
-
-def compute_f1_score(prediction, ground_truth):
-    """Compute the F1 score between the prediction and ground truth."""
-    pred_tokens = normalize_answer(prediction).split()
-    gt_tokens = normalize_answer(ground_truth).split()
-
-    common = set(pred_tokens) & set(gt_tokens)
-    num_common = len(common)
-
-    if num_common == 0:
-        return 0.0
-
-    precision = num_common / len(pred_tokens)
-    recall = num_common / len(gt_tokens)
-    f1 = 2 * (precision * recall) / (precision + recall)
-    return f1
 
 def get_accuracy(batch, gold_batch, padding_index=-100):
     """

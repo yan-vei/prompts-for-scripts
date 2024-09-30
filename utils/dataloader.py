@@ -11,6 +11,7 @@ def create_turkish_ner_dataloader(tokenizer, token_type, train_path, test_path, 
     :param train_path: path to train dataset
     :param test_path: path to test dataset
     :param padding_token: padding token
+    :param token_type: latin or cyrillic tokens
     :param batch_size: specified in config
     :return: train dataloader, test dataloader, num classes
     """
@@ -159,6 +160,12 @@ def create_kazakh_qa_dataloader(tokenizer, train_path, test_path, batch_size, to
 
 
 def custom_collate_fn(batch):
+    """
+        Custom collate function to make sure answers are tokenized properly.
+        :param batch: list of examples
+        :return: batched examples
+    """
+
     # Stack tensor fields
     tensor_keys = ['input_ids', 'attention_mask', 'start_positions', 'end_positions']
     batch_tensors = {key: torch.stack([item[key] for item in batch]) for key in tensor_keys}

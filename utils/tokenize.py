@@ -51,8 +51,16 @@ def tokenize_and_align_labels_ner(examples, tags, token_type, tokenizer, padding
 
 
 def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_stride=128):
+    """
+    Tokenize and align the THQuAD dataset.
+    :param examples: a sequence of tokens
+    :param tokenizer: tokenizer object, e.g. BertTokenizer
+    :param max_length: maximum length of tokenized sequence (after is truncated)
+    :param doc_stride: stride of the sequence
 
-    # Tokenize the contexts and questions
+    :return: tokenized_inputs
+    """
+
     tokenized_examples = tokenizer(
         examples['question'],
         examples['context'],
@@ -64,30 +72,23 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
         padding="max_length",
     )
 
-    # Map from tokenized examples to original examples
     sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
     offset_mapping = tokenized_examples.pop("offset_mapping")
 
-    # Initialize lists for start and end positions
+    # Initialize lists for start and end positions as well as answers
     start_positions = []
     end_positions = []
-
-    # Initialize list for answers
     answers_list = []
 
+    # Remap the features to the new indices
     for i, offsets in enumerate(offset_mapping):
-        # Get the example index corresponding to this feature
         sample_index = sample_mapping[i]
         answers = examples["answers"][sample_index]
-
-        # Append the answer to the answers_list
         answers_list.append(answers)
 
-        # Start/end character index of the answer in the text
         answer_start = answers["answer_start"][0]
         answer_end = answer_start + len(answers["text"][0])
 
-        # Start token index of the current span in the text
         sequence_ids = tokenized_examples.sequence_ids(i)
 
         # Find the start and end of the context
@@ -99,21 +100,17 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
             idx += 1
         context_end = idx - 1
 
-        # If the answer is not fully inside the context, label it (0, 0)
         if not (offsets[context_start][0] <= answer_start and offsets[context_end][1] >= answer_end):
             start_positions.append(0)
             end_positions.append(0)
         else:
-            # Otherwise move the token_start and token_end to the start and end locations of the answer
             token_start_index = context_start
             token_end_index = context_end
 
-            # Find the start token index
             while token_start_index <= context_end and offsets[token_start_index][0] <= answer_start:
                 token_start_index += 1
             start_positions.append(token_start_index - 1)
 
-            # Find the end token index
             while token_end_index >= context_start and offsets[token_end_index][1] >= answer_end:
                 token_end_index -= 1
             end_positions.append(token_end_index + 1)
@@ -127,6 +124,17 @@ def tokenize_and_align_turkish_qa(examples, tokenizer, max_length=384, doc_strid
 
 
 def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=512, doc_stride=128, token_type='tokens'):
+    """
+    Tokenize and align the Kazakh QA dataset.
+    :param examples: a sequence of tokens
+    :param tokenizer: tokenizer object, e.g. BertTokenizer
+    :param max_length: maximum length of tokenized sequence (after is truncated)
+    :param doc_stride: stride of the sequence
+    :param token_type: tokens or latinized tokens (for Kazakh)
+
+    :return: tokenized_inputs
+    """
+
     # Select the appropriate keys based on token_type
     if token_type == 'latinized':
         question_key = 'latinized_question'
@@ -137,7 +145,7 @@ def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=512, doc_stride
         context_key = 'context'
         answers_key = 'answers'
 
-    # Tokenize the contexts and questions
+
     tokenized_examples = tokenizer(
         examples[question_key],
         examples[context_key],
@@ -153,18 +161,14 @@ def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=512, doc_stride
     sample_mapping = tokenized_examples.pop("overflow_to_sample_mapping")
     offset_mapping = tokenized_examples.pop("offset_mapping")
 
-    # Initialize lists for start and end positions
+    # Initialize lists for start and end positions as well as answers
     start_positions = []
     end_positions = []
-
-    # Initialize list for answers
     answers_list = []
 
+    # Remap features to the new indices
     for i, offsets in enumerate(offset_mapping):
-        # Get the example index corresponding to this feature
         sample_index = sample_mapping[i]
-
-        # Retrieve the answers dictionary for this example
         answers = examples[answers_key][sample_index]
         answers_list.append(answers)
 
@@ -183,10 +187,7 @@ def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=512, doc_stride
             end_positions.append(0)
             continue
 
-        # Compute the end position of the answer
         answer_end = answer_start + len(answer_text)
-
-        # Get the sequence IDs to know which tokens belong to the context
         sequence_ids = tokenized_examples.sequence_ids(i)
 
         # Find the start and end of the context in the tokenized sequence
@@ -198,24 +199,21 @@ def tokenize_and_align_kazakh_qa(examples, tokenizer, max_length=512, doc_stride
             idx += 1
         context_end = idx - 1
 
-        # If the answer is not fully inside the context, label it (0, 0)
         if not (offsets[context_start][0] <= answer_start and offsets[context_end][1] >= answer_end):
             start_positions.append(0)
             end_positions.append(0)
         else:
-            # Find the token start index
             token_start_index = context_start
             while token_start_index <= context_end and offsets[token_start_index][0] <= answer_start:
                 token_start_index += 1
             start_positions.append(token_start_index - 1)
 
-            # Find the token end index
             token_end_index = context_end
             while token_end_index >= context_start and offsets[token_end_index][1] >= answer_end:
                 token_end_index -= 1
             end_positions.append(token_end_index + 1)
 
-    # Add the new fields to tokenized_examples
+    # Form the new tokenized examples objects
     tokenized_examples["start_positions"] = start_positions
     tokenized_examples["end_positions"] = end_positions
     tokenized_examples["answers"] = answers_list

@@ -1,6 +1,6 @@
 import torch
 import wandb
-from .metrics import get_accuracy, normalize_answer, compute_f1_score, compute_exact_match
+from .metrics import get_accuracy, compute_exact_match
 
 
 def train_qa_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloader, optimizer, num_epochs, device, num_tokens):
@@ -19,7 +19,7 @@ def train_qa_with_soft_prompts(model, tokenizer, train_dataloader, test_dataload
     for epoch in range(num_epochs):
         print(f'Training epoch {epoch + 1}/{num_epochs} started.')
 
-            # Set model to training mode
+        # Set model to training mode
         model.train()
 
         loss_per_epoch = 0
@@ -27,63 +27,53 @@ def train_qa_with_soft_prompts(model, tokenizer, train_dataloader, test_dataload
         for idx, batch in enumerate(train_dataloader):
             print(f'Training batch {idx+1} of {len(train_dataloader)}...')
 
-                # Move tensors to the appropriate device
             batch = {k: v.to(device) for k, v in batch.items()}
 
-                # Adjust start_positions and end_positions by num_tokens
+            # Adjust start_positions and end_positions by num_tokens
             batch['start_positions'] = batch['start_positions'] + num_tokens
             batch['end_positions'] = batch['end_positions'] + num_tokens
 
-                # Ensure positions do not exceed sequence length
+            # Ensure positions do not exceed sequence length
             max_len = batch['input_ids'].size(1)
             batch['start_positions'] = torch.clamp(batch['start_positions'], max=max_len - 1)
             batch['end_positions'] = torch.clamp(batch['end_positions'], max=max_len - 1)
 
-                # Forward pass and loss computation
             outputs = model(**batch)
             loss = outputs.loss
             loss_per_epoch += loss.detach().float()
 
-                # Backpropagation
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
 
-            # Evaluate model performance per epoch
+        # Model evaluation
         model.eval()
         eval_loss = 0
 
         for idx, batch in enumerate(test_dataloader):
             print(f'Evaluating batch {idx+1} of {len(test_dataloader)}...')
 
-            # Separate 'answers' from the batch
             batch.pop('answers', None)
-
-                # Move tensors to the device
             batch = {k: v.to(device) for k, v in batch.items()}
 
-                # Adjust start_positions and end_positions
+            # Adjust start_positions and end_positions
             batch['start_positions'] = batch['start_positions'] + num_tokens
             batch['end_positions'] = batch['end_positions'] + num_tokens
 
-                # Ensure positions do not exceed sequence length
+            # Ensure positions do not exceed sequence length
             max_len = batch['input_ids'].size(1)
             batch['start_positions'] = torch.clamp(batch['start_positions'], max=max_len - 1)
             batch['end_positions'] = torch.clamp(batch['end_positions'], max=max_len - 1)
 
-                # No gradient computation during evaluation
             with torch.no_grad():
                 outputs = model(**batch)
 
-                # Accumulate evaluation loss
             loss = outputs.loss
             eval_loss += loss.detach().float()
 
-            # Calculate average losses
             eval_epoch_loss = eval_loss / len(test_dataloader)
             train_epoch_loss = loss_per_epoch / len(train_dataloader)
 
-        # Log metrics
         print(f"{epoch=}: {train_epoch_loss=} {eval_epoch_loss=}")
 
 
@@ -111,7 +101,6 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
         for idx, batch in enumerate(train_dataloader):
             print(f'Training batch {idx+1} of {len(train_dataloader)}...')
 
-            # Unpack the batch
             batch = {k: v.to(device) for k, v in batch.items()}
 
             # Pad labels to the length of the tokens
@@ -119,22 +108,19 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
             padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
             batch['labels'] = padded_labels
 
-            # Forward pass and loss computation
             outputs = model(**batch)
             loss = outputs.loss
             loss_per_epoch += loss.detach().float()
 
-            # Backpropagate
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
 
-        # Evaluate model's performance per epoch
+        # Evaluate model's performance
         model.eval()
         eval_loss = 0
 
         for batch in test_dataloader:
-            # Unpack the batch
             batch = {k: v.to(device) for k, v in batch.items()}
 
             # Pad labels again (to match num of soft prompt tokens):
@@ -142,15 +128,12 @@ def train_ner_with_soft_prompts(model, tokenizer, train_dataloader, test_dataloa
             padded_labels = torch.nn.functional.pad(labels, (num_tokens, 0), value=-100)
             batch['labels'] = padded_labels
 
-            # No backprop, since evaluation
             with torch.no_grad():
                 outputs = model(**batch)
 
-            # Compute loss
             loss = outputs.loss
             eval_loss += loss.detach().float()
 
-        # Log metrics to console
         eval_epoch_loss = eval_loss / len(test_dataloader)
         eval_ppl = torch.exp(eval_epoch_loss)
         train_epoch_loss = loss_per_epoch / len(train_dataloader)
@@ -206,7 +189,6 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
 
             loss_logits = logits.view(-1, logits.size(-1))
 
-            # Calculate loss
             batch_loss = loss_func(loss_logits, labels.view(-1))
             loss_per_epoch += batch_loss.detach().item()
 
@@ -222,11 +204,9 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
             acc = correct / total
             accuracies.append(acc)
 
-            # Backpropagate
             optimizer.zero_grad()
             batch_loss.backward()
 
-            # Clip gradients
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
             optimizer.step()
@@ -239,7 +219,6 @@ def train_ner(model, train_dataloader, loss_func, optimizer, scheduler, num_epoc
         if use_wandb is True:
             wandb.log(logging_dict)
 
-        # Display additional information for debugging purposes
         print(f"\tEpoch: {epoch+1}\nLoss: {loss_per_epoch}   ---  Accuracy on train: {acc}")
 
     return model, accuracies
@@ -261,7 +240,6 @@ def evaluate_ner(model, val_dataloader, device, num_tokens=None, with_soft_promp
     correct = 0
     total = 0
 
-    # Disable backpropagation
     with torch.no_grad():
         logging_dict = {}
 
@@ -282,7 +260,6 @@ def evaluate_ner(model, val_dataloader, device, num_tokens=None, with_soft_promp
             if with_soft_prompts is True:
                 labels = torch.nn.functional.pad(batch['labels'], (num_tokens, 0), value=-100).to(device)
 
-            # Calculate validation accuracy
             correct_in_batch, total_in_batch = get_accuracy(predicted_tags, labels)
             correct += correct_in_batch
             total += total_in_batch
@@ -315,7 +292,6 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
     :param use_wandb: whether to use wandb for logging
     :return: trained model, list of losses, list of accuracies
     """
-    # Initialize metrics
     losses = []
     accuracies = []
 
@@ -337,7 +313,6 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
         for idx, batch in enumerate(train_dataloader):
             print(f'Training batch {idx+1} of {len(train_dataloader)}...')
 
-            # Move batch data to device
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             start_positions = batch["start_positions"].to(device)
@@ -348,16 +323,13 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
                 start_positions = start_positions + num_tokens
                 end_positions = end_positions + num_tokens
 
-            # Zero the parameter gradients
             optimizer.zero_grad()
 
-            # Forward pass
             outputs = model(input_seq=input_ids, attention_mask=attention_mask)
 
             start_logits = outputs[0]
             end_logits = outputs[1]
 
-            # Compute loss
             loss_start = loss_func(start_logits, start_positions)
             loss_end = loss_func(end_logits, end_positions)
             batch_loss = (loss_start + loss_end) / 2
@@ -365,17 +337,13 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
             loss_per_epoch += batch_loss.detach().item()
             losses.append(batch_loss.detach().item())
 
-            # Backward pass
             batch_loss.backward()
 
-            # Clip gradients to prevent exploding gradients
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
-            # Update parameters
             optimizer.step()
             scheduler.step()
 
-            # Compute accuracies
             with torch.no_grad():
                 pred_start_positions = torch.argmax(start_logits, dim=1)
                 pred_end_positions = torch.argmax(end_logits, dim=1)
@@ -405,7 +373,6 @@ def train_qa(model, train_dataloader, loss_func, optimizer, scheduler, num_epoch
         if use_wandb:
             wandb.log(logging_dict)
 
-        # Display additional information
         print(f"\tEpoch: {epoch+1}")
         print(f"Loss: {epoch_loss:.4f}   ---  Start Accuracy: {accuracy_start:.2f}%  End Accuracy: {accuracy_end:.2f}%  Span Accuracy: {accuracy_span:.2f}%")
 
@@ -455,7 +422,6 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
             start_logits = outputs[0]
             end_logits = outputs[1]
 
-            # Compute loss (optional, for monitoring)
             loss_func = torch.nn.CrossEntropyLoss()
             loss_start = loss_func(start_logits, start_positions)
             loss_end = loss_func(end_logits, end_positions)
@@ -464,7 +430,6 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
             batch_size = input_ids.size(0)
             total_examples += batch_size
 
-            # Get predicted start and end positions
             pred_start_positions = torch.argmax(start_logits, dim=1)
             pred_end_positions = torch.argmax(end_logits, dim=1)
 
@@ -491,7 +456,6 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
                     pred_start = pred_start_positions[i].item()
                     pred_end = pred_end_positions[i].item()
 
-                # Adjust predictions if necessary
                 if pred_start > pred_end:
                     pred_end = pred_start
 
@@ -502,26 +466,21 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
                 pred_answer_tokens = tokens[pred_start:pred_end + 1]
                 pred_answer = tokenizer.decode(pred_answer_tokens, skip_special_tokens=True)
 
-                # Get ground truth answer texts
+                # Get ground truth answer texts based on the language selected
                 if lang == 'KZ':
                     ground_truth_answers = answers[i][0]  # List of acceptable answers
                 else:
                     ground_truth_answers = answers[0][i]
 
-                # Compute EM and F1 for this example
                 em_for_example = max(compute_exact_match(pred_answer, gt_answer) for gt_answer in ground_truth_answers)
-
                 total_em += em_for_example
 
-    # Compute average accuracies
     accuracy_start = 100.0 * total_correct_start / total_examples
     accuracy_end = 100.0 * total_correct_end / total_examples
     accuracy_span = 100.0 * total_correct_span / total_examples
 
-    # Compute average EM and F1 scores
     em_score = 100.0 * total_em / total_examples
 
-    # Calculate average validation loss
     avg_loss = total_loss / len(val_dataloader)
 
     # Log metrics to Wandb
@@ -534,7 +493,6 @@ def evaluate_qa(model, val_dataloader, device, tokenizer, with_soft_prompts=Fals
             'Accuracy Span': accuracy_span
         })
 
-    # Display metrics
     print(f"Validation Loss: {avg_loss:.4f} | EM: {em_score:.2f}% ")
     print(f"Start Accuracy: {accuracy_start:.2f}% | End Accuracy: {accuracy_end:.2f}% | Span Accuracy: {accuracy_span:.2f}%")
 

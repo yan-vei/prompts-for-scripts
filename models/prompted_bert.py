@@ -4,6 +4,9 @@ from peft import PeftModel
 
 
 class PromptedBertNER(torch.nn.Module):
+    """
+        mBERT model for evaluating soft prompts on the NER task.
+    """
     def __init__(self, device, name, num_classes, soft_prompts_path, num_orig_ner_labels, hidden_size=768,
                  freeze=True):
         super().__init__()
@@ -25,8 +28,8 @@ class PromptedBertNER(torch.nn.Module):
 
     def extract_soft_prompts(self):
         """
-        Extract soft prompts form the trained PEFT model.
-        :return: soft prompts form the trained PEFT model
+            Extract soft prompts form the trained PEFT model.
+            :return: soft prompts form the trained PEFT model
         """
 
         # Because we trained on Turkish NER which has a different amount of labels,
@@ -42,8 +45,8 @@ class PromptedBertNER(torch.nn.Module):
 
     def freeze_params(self):
         """
-        Only train the soft prompts, don't train any model parameters.
-        :return: void
+            Only train the soft prompts, don't train any model parameters.
+            :return: void
         """
 
         for param in self.mbert.parameters():
@@ -51,10 +54,10 @@ class PromptedBertNER(torch.nn.Module):
 
     def forward(self, input_seq, attention_mask):
         """
-        Forward pass for the model with preprending soft prompts.
-        :param input_seq: input_ids 
-        :param attention_mask: attention_mask
-        :return: logits
+            Forward pass for the model with preprending soft prompts.
+            :param input_seq: input_ids 
+            :param attention_mask: attention_mask
+            :return: logits
         """""
 
         # Expand soft prompts to match the batch size
@@ -85,6 +88,9 @@ class PromptedBertNER(torch.nn.Module):
 
 
 class PromptedBertQA(torch.nn.Module):
+    """
+        mBERT model for evaluating soft prompts on the QA task.
+    """
     def __init__(self, device, name, soft_prompts_path,  hidden_size=768,
                  freeze=True):
         super().__init__()
@@ -109,8 +115,8 @@ class PromptedBertQA(torch.nn.Module):
 
     def extract_soft_prompts(self):
         """
-        Extract soft prompts form the trained PEFT model.
-        :return: soft prompts form the trained PEFT model
+            Extract soft prompts form the trained PEFT model.
+            :return: soft prompts form the trained PEFT model
         """
 
         # This is to extract the soft prompts from the trained model
@@ -123,8 +129,8 @@ class PromptedBertQA(torch.nn.Module):
 
     def freeze_params(self):
         """
-        Only train the soft prompts, don't train any model parameters.
-        :return: void
+            Only train the soft prompts, don't train any model parameters.
+            :return: void
         """
 
         for param in self.mbert.parameters():
@@ -132,10 +138,10 @@ class PromptedBertQA(torch.nn.Module):
 
     def forward(self, input_seq, attention_mask):
         """
-        Forward pass for the model with preprending soft prompts.
-        :param input_seq: input_ids 
-        :param attention_mask: attention_mask
-        :return: logits
+            Forward pass for the model with preprending soft prompts.
+            :param input_seq: input_ids 
+            :param attention_mask: attention_mask
+            :return: logits
         """""
 
         # Expand soft prompts to match the batch size
